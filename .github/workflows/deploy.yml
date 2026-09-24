@@ -2,13 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      ref:
-        description: Git ref to deploy
-        required: false
-        default: main
 
 permissions:
   contents: read
@@ -19,88 +15,134 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to server
-    runs-on: ubuntu-latest
+    name: Build and Deploy to Server
     environment: production
+    runs-on: ubuntu-24.04-arm
+    if: github.ref == 'refs/heads/main'
+
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      BACKEND_SOURCE_DIR: pulsa-be
+      FRONTEND_SOURCE_DIR: pulsa-fe
+      FRONTEND_RELEASE_DIR: topuna/frontend
 
     steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            SERVER_HOST
+            SERVER_PORT
+            SERVER_USER
+            SERVER_PASSWORD
+          )
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is empty. Add it in GitHub repository secrets."
+              exit 1
+            fi
+          done
+          if [ ! -f "${BACKEND_SOURCE_DIR}/go.sum" ]; then
+            echo "::error::BACKEND_SOURCE_DIR must point to the backend folder in this repository, for example: pulsa-be"
+            exit 1
+          fi
+          if [ ! -f "${FRONTEND_SOURCE_DIR}/package-lock.json" ]; then
+            echo "::error::FRONTEND_SOURCE_DIR must point to the frontend folder in this repository, for example: pulsa-fe"
+            exit 1
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          script: |
-            set -e
+          go-version: "1.24.2"
+          cache-dependency-path: pulsa-be/go.sum
 
-            DEPLOY_REF="${{ github.ref_name }}"
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.ref }}" ]; then
-              DEPLOY_REF="${{ inputs.ref }}"
-            fi
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.11.1"
+          cache: npm
+          cache-dependency-path: pulsa-fe/package-lock.json
 
-            BACKEND_DIR="${{ secrets.BACKEND_SOURCE_DIR }}"
-            FRONTEND_DIR="${{ secrets.FRONTEND_SOURCE_DIR }}"
-            BACKEND_REPO="$(dirname "$BACKEND_DIR")"
-            FRONTEND_REPO="$(dirname "$FRONTEND_DIR")"
+      - name: Build backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deploy/backend
+          cd "$BACKEND_SOURCE_DIR"
+          go mod download
+          go test ./...
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../deploy/backend/topuna-api .
 
-            git_safe() {
-              git \
-                -c safe.directory="$BACKEND_DIR" \
-                -c safe.directory="$FRONTEND_DIR" \
-                -c safe.directory="$BACKEND_REPO" \
-                -c safe.directory="$FRONTEND_REPO" \
-                "$@"
-            }
+      - name: Build frontend standalone
+        env:
+          NEXT_PUBLIC_SITE_URL: https://topuna.com
+          NEXTAUTH_URL: https://topuna.com
+          API_BASE: http://127.0.0.1:8103
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$FRONTEND_SOURCE_DIR"
+          npm ci
+          npm run lint
+          npm run build
+          cd ..
+          rm -rf deploy/frontend
+          mkdir -p deploy/frontend/.next
+          cp -R "$FRONTEND_SOURCE_DIR/.next/standalone/." deploy/frontend/
+          cp -R "$FRONTEND_SOURCE_DIR/.next/static" deploy/frontend/.next/static
+          cp -R "$FRONTEND_SOURCE_DIR/public" deploy/frontend/public
+          test -f deploy/frontend/public/topuna-assets/Topuna_Assets_Pecah/09_section_blocks/top_header_stack.png
+          printf '%s\n' "$GITHUB_SHA" > deploy/frontend/DEPLOY_COMMIT
+          printf '%s\n' "$GITHUB_SHA" > deploy/frontend/public/deploy-version.txt
 
-            cd "$BACKEND_DIR"
-            git_safe fetch origin "$DEPLOY_REF"
-            git_safe checkout "$DEPLOY_REF"
-            git_safe pull --ff-only origin "$DEPLOY_REF"
-            echo "Backend deployed commit: $(git_safe rev-parse --short HEAD)"
-            go mod download
-            go test ./...
-            go build -o pulsa2 .
+      - name: Install SSH tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
 
-            cd "$FRONTEND_DIR"
-            git_safe fetch origin "$DEPLOY_REF"
-            git_safe checkout "$DEPLOY_REF"
-            git_safe pull --ff-only origin "$DEPLOY_REF"
-            echo "Frontend deployed commit: $(git_safe rev-parse --short HEAD)"
-            test -f package.json
-            test -f components/site/TopunaReferenceHome.tsx
-            test -f public/topuna-assets/Topuna_Assets_Pecah/09_section_blocks/top_header_stack.png
-            npm ci
-            npm run build
+      - name: Upload release files
+        shell: bash
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
 
-            if [ -n "${{ secrets.FRONTEND_RELEASE_DIR }}" ] && [ "${{ secrets.FRONTEND_RELEASE_DIR }}" != "$FRONTEND_DIR" ]; then
-              mkdir -p "${{ secrets.FRONTEND_RELEASE_DIR }}"
-              rsync -a --delete \
-                --exclude ".git" \
-                --exclude "node_modules" \
-                --exclude ".env.local" \
-                "$FRONTEND_DIR/" \
-                "${{ secrets.FRONTEND_RELEASE_DIR }}/"
+          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
+            "set -e;
+             mkdir -p \"\$HOME/${BACKEND_RELEASE_DIR}\";
+             mkdir -p \"\$HOME/${FRONTEND_RELEASE_DIR}\""
 
-              cd "${{ secrets.FRONTEND_RELEASE_DIR }}"
-              npm ci --omit=dev
-            fi
+          sshpass -e rsync -az --delete -e "ssh ${SSH_OPTS}" \
+            deploy/frontend/ "${SERVER_USER}@${SERVER_HOST}:~/${FRONTEND_RELEASE_DIR}/"
 
-            if command -v pm2 >/dev/null 2>&1; then
-              pm2 list
-              if [ -n "${{ secrets.PM2_BACKEND_APP_NAME }}" ]; then
-                pm2 restart "${{ secrets.PM2_BACKEND_APP_NAME }}" --update-env
-              else
-                echo "PM2_BACKEND_APP_NAME is empty; backend restart skipped."
-              fi
-              if [ -n "${{ secrets.PM2_FRONTEND_APP_NAME }}" ]; then
-                pm2 restart "${{ secrets.PM2_FRONTEND_APP_NAME }}" --update-env
-              else
-                echo "PM2_FRONTEND_APP_NAME is required to restart the frontend."
-                exit 1
-              fi
-              pm2 save
-            else
-              echo "pm2 not found. Build completed, restart the app manually."
-            fi
+          sshpass -e rsync -az -e "ssh ${SSH_OPTS}" \
+            deploy/backend/topuna-api "${SERVER_USER}@${SERVER_HOST}:~/${BACKEND_RELEASE_DIR}/topuna-api"
+
+      - name: Activate TopUna and verify services
+        shell: bash
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
+            'sudo -n /usr/local/sbin/topuna-activate'
+
+      - name: Verify public release
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://topuna.com/deploy-version.txt?commit=${GITHUB_SHA}")
+          test "$actual" = "$GITHUB_SHA"
