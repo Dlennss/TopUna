@@ -30,11 +30,20 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          script_stop: true
           script: |
             set -e
 
-            cd "${{ secrets.BACKEND_SOURCE_DIR }}"
+            BACKEND_DIR="${{ secrets.BACKEND_SOURCE_DIR }}"
+            FRONTEND_DIR="${{ secrets.FRONTEND_SOURCE_DIR }}"
+            BACKEND_REPO="$(dirname "$BACKEND_DIR")"
+            FRONTEND_REPO="$(dirname "$FRONTEND_DIR")"
+
+            git config --global --add safe.directory "$BACKEND_DIR"
+            git config --global --add safe.directory "$FRONTEND_DIR"
+            git config --global --add safe.directory "$BACKEND_REPO"
+            git config --global --add safe.directory "$FRONTEND_REPO"
+
+            cd "$BACKEND_DIR"
             git fetch origin "${{ inputs.ref }}"
             git checkout "${{ inputs.ref }}"
             git pull --ff-only origin "${{ inputs.ref }}"
@@ -42,20 +51,20 @@ jobs:
             go test ./...
             go build -o pulsa2 .
 
-            cd "${{ secrets.FRONTEND_SOURCE_DIR }}"
+            cd "$FRONTEND_DIR"
             git fetch origin "${{ inputs.ref }}"
             git checkout "${{ inputs.ref }}"
             git pull --ff-only origin "${{ inputs.ref }}"
             npm ci
             npm run build
 
-            if [ -n "${{ secrets.FRONTEND_RELEASE_DIR }}" ] && [ "${{ secrets.FRONTEND_RELEASE_DIR }}" != "${{ secrets.FRONTEND_SOURCE_DIR }}" ]; then
+            if [ -n "${{ secrets.FRONTEND_RELEASE_DIR }}" ] && [ "${{ secrets.FRONTEND_RELEASE_DIR }}" != "$FRONTEND_DIR" ]; then
               mkdir -p "${{ secrets.FRONTEND_RELEASE_DIR }}"
               rsync -a --delete \
                 --exclude ".git" \
                 --exclude "node_modules" \
                 --exclude ".env.local" \
-                "${{ secrets.FRONTEND_SOURCE_DIR }}/" \
+                "$FRONTEND_DIR/" \
                 "${{ secrets.FRONTEND_RELEASE_DIR }}/"
 
               cd "${{ secrets.FRONTEND_RELEASE_DIR }}"
