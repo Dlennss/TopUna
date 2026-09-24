@@ -1,21 +1,38 @@
 import Link from "next/link";
-import { Bell, Eye, History, Home, Plus, ReceiptText, Send, ShieldCheck, UserRound, WalletCards } from "lucide-react";
+import {
+  Bell,
+  Bolt,
+  CreditCard,
+  Eye,
+  FileText,
+  Grid3X3,
+  History,
+  Home,
+  Plus,
+  ReceiptText,
+  Send,
+  ShieldCheck,
+  Smartphone,
+  UserRound,
+  WalletCards,
+  Wifi,
+} from "lucide-react";
 
 const assetBase = "/topuna-assets/Topuna_Assets_Pecah";
 
 const services = [
-  { label: "Pulsa & Data", href: "/pulsa-data", icon: "05_service_icons/pulsa_data_icon.png" },
-  { label: "Paket Internet", href: "/paket-data", icon: "05_service_icons/paket_internet_icon.png" },
-  { label: "Token Listrik", href: "/listrik/token", icon: "05_service_icons/token_listrik_icon.png" },
-  { label: "E-Wallet", href: "/ewallet", icon: "05_service_icons/ewallet_icon.png" },
-  { label: "Tagihan", href: "/listrik/tagihan", icon: "05_service_icons/tagihan_icon.png" },
-  { label: "Lainnya", href: "/kategori", icon: "05_service_icons/lainnya_icon.png" },
+  { label: "Pulsa & Data", href: "/pulsa-data", icon: Smartphone, tone: "bg-rose-50 text-[#f0184f]" },
+  { label: "Paket Internet", href: "/paket-data", icon: Wifi, tone: "bg-sky-50 text-[#129fe8]" },
+  { label: "Token Listrik", href: "/listrik/token", icon: Bolt, tone: "bg-amber-50 text-[#f6b100]" },
+  { label: "E-Wallet", href: "/ewallet", icon: WalletCards, tone: "bg-violet-50 text-[#7b44df]" },
+  { label: "Tagihan", href: "/listrik/tagihan", icon: FileText, tone: "bg-emerald-50 text-[#16c59a]" },
+  { label: "Lainnya", href: "/kategori", icon: Grid3X3, tone: "bg-slate-100 text-slate-500" },
 ];
 
 const activities = [
-  { title: "Beli Paket Data", sub: "Telkomsel · 10 GB", amount: "- Rp 50.000", date: "12 Mar 2025, 14:32", icon: "06_activity/activity_icon_1.png" },
-  { title: "Token Listrik", sub: "PLN · 50.000", amount: "- Rp 50.000", date: "11 Mar 2025, 20:17", icon: "06_activity/activity_icon_2.png" },
-  { title: "Top Up E-Wallet", sub: "OVO · Top Up Saldo", amount: "- Rp 100.000", date: "10 Mar 2025, 09:21", icon: "06_activity/activity_icon_3.png" },
+  { title: "Beli Paket Data", sub: "Telkomsel · 10 GB", amount: "- Rp 50.000", date: "12 Mar 2025, 14:32", icon: Wifi, tone: "bg-sky-50 text-[#129fe8]" },
+  { title: "Token Listrik", sub: "PLN · 50.000", amount: "- Rp 50.000", date: "11 Mar 2025, 20:17", icon: Bolt, tone: "bg-amber-50 text-[#f6b100]" },
+  { title: "Top Up E-Wallet", sub: "OVO · Top Up Saldo", amount: "- Rp 100.000", date: "10 Mar 2025, 09:21", icon: CreditCard, tone: "bg-violet-50 text-[#7040d8]" },
 ];
 
 function asset(path: string) {
@@ -98,9 +115,11 @@ export function TopunaReferenceHome() {
           </div>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {services.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={false} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-white px-2 text-center shadow-sm">
-                <img src={asset(item.icon)} alt="" className="h-11 w-11 object-contain" />
-                <span className="text-[11px] font-bold leading-tight text-[#08132c]">{item.label}</span>
+              <Link key={item.label} href={item.href} prefetch={false} className="flex min-h-[104px] flex-col items-center justify-center gap-2 rounded-[18px] border border-rose-100/80 bg-white px-2 text-center shadow-[0_6px_16px_rgba(71,22,39,0.08)] transition hover:-translate-y-0.5">
+                <span className={`grid h-12 w-12 place-items-center rounded-2xl ${item.tone}`}>
+                  <item.icon className="h-7 w-7" strokeWidth={2.5} />
+                </span>
+                <span className="max-w-[68px] text-[11px] font-black leading-tight text-[#08132c]">{item.label}</span>
               </Link>
             ))}
           </div>
@@ -114,7 +133,9 @@ export function TopunaReferenceHome() {
           <div className="divide-y divide-slate-100">
             {activities.map((item) => (
               <div key={item.title} className="flex items-center gap-3 py-3">
-                <img src={asset(item.icon)} alt="" className="h-12 w-12 shrink-0" />
+                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${item.tone}`}>
+                  <item.icon className="h-7 w-7" strokeWidth={2.6} />
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-black">{item.title}</p>
                   <p className="truncate text-sm font-semibold text-slate-500">{item.sub}</p>
@@ -133,12 +154,12 @@ export function TopunaReferenceHome() {
         </Link>
       </main>
 
-      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] bg-white px-6 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_30px_rgba(51,24,37,0.12)] md:w-97.5">
-        <div className="grid grid-cols-4">
-          <Link href="/" className="flex flex-col items-center gap-1 text-[#f20d3e]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
-          <Link href="/transaksi" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-bold">Riwayat</span></Link>
-          <Link href="/user/saldo" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-bold">Saldo</span></Link>
-          <Link href="/login" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-bold">Akun</span></Link>
+      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] border border-white/80 bg-white/95 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-14px_34px_rgba(51,24,37,0.14)] backdrop-blur-xl md:w-97.5">
+        <div className="grid grid-cols-4 gap-1">
+          <Link href="/" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50 text-[#f20d3e]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
+          <Link href="/transaksi" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-bold">Riwayat</span></Link>
+          <Link href="/user/saldo" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-bold">Saldo</span></Link>
+          <Link href="/login" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-bold">Akun</span></Link>
         </div>
       </nav>
     </div>
