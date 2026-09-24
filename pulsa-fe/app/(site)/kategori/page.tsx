@@ -61,10 +61,10 @@ export default async function GuestKategoriPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <main className="bg-sky-50">
+    <main className="bg-[#fff7fa]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 px-5 pt-4">
         <ServiceDirectory mode="guest" />
       </div>
 

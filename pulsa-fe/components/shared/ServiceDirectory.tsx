@@ -240,9 +240,9 @@ export function ServiceDirectory({ mode = "guest", role }: ServiceDirectoryProps
     .filter((group) => group.items.length > 0);
 
   return (
-    <section className="space-y-3 pb-24">
-      <div className="sticky top-0 z-20 -mx-4 bg-[#fcf5f7]/92 px-4 pb-3 pt-3 backdrop-blur-xl">
-        <label className="flex h-13 items-center gap-3 rounded-[22px] border border-emerald-950/10 bg-white px-4 shadow-[0_12px_30px_rgba(6,78,59,0.08)]">
+    <section className="space-y-4 pb-24">
+      <div className="sticky top-0 z-20 -mx-5 bg-[#fff7fa]/92 px-5 pb-3 pt-3 backdrop-blur-xl">
+        <label className="flex h-13 items-center gap-3 rounded-[22px] border border-rose-100 bg-white px-4 shadow-[0_12px_30px_rgba(102,21,44,0.08)]">
           <Search className="h-5 w-5 shrink-0 text-[#c93450]" />
           <input
             value={query}
@@ -260,8 +260,8 @@ export function ServiceDirectory({ mode = "guest", role }: ServiceDirectoryProps
               className={cn(
                 "h-9 rounded-full px-4 text-xs font-black transition",
                 activeGroup === "semua"
-                  ? "bg-[#651e34] text-white shadow-[0_10px_20px_rgba(5,46,38,0.22)]"
-                  : "border border-emerald-950/10 bg-white text-slate-600"
+                  ? "bg-[#c8133f] text-white shadow-[0_10px_20px_rgba(102,21,44,0.18)]"
+                  : "border border-rose-100 bg-white text-slate-600"
               )}
             >
               Semua
@@ -274,8 +274,8 @@ export function ServiceDirectory({ mode = "guest", role }: ServiceDirectoryProps
                 className={cn(
                   "h-9 rounded-full px-4 text-xs font-black transition",
                   activeGroup === group.id
-                    ? "bg-[#651e34] text-white shadow-[0_10px_20px_rgba(5,46,38,0.22)]"
-                    : "border border-emerald-950/10 bg-white text-slate-600"
+                    ? "bg-[#c8133f] text-white shadow-[0_10px_20px_rgba(102,21,44,0.18)]"
+                    : "border border-rose-100 bg-white text-slate-600"
                 )}
               >
                 {group.title}
@@ -285,7 +285,7 @@ export function ServiceDirectory({ mode = "guest", role }: ServiceDirectoryProps
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-lime-200/70 bg-linear-to-r from-[#fff8e7] via-white to-[#fcf5f7] px-4 py-3 shadow-[0_12px_28px_rgba(6,78,59,0.08)]">
+      <div className="overflow-hidden rounded-[24px] border border-rose-100 bg-linear-to-r from-white via-rose-50 to-white px-4 py-3 shadow-[0_12px_28px_rgba(102,21,44,0.08)]">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-orange-100 text-orange-500">
             <Zap className="h-5 w-5" />

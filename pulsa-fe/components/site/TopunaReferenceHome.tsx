@@ -67,7 +67,9 @@ export function TopunaReferenceHome() {
         </div>
 
         <div className="relative mt-5 flex items-center gap-4">
-          <img src={asset("01_header/greeting_avatar.png")} alt="" className="h-[68px] w-[68px] rounded-full" />
+          <span className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-full border border-white/35 bg-white/18 text-white shadow-[0_12px_26px_rgba(79,7,30,0.18)]">
+            <UserRound className="h-9 w-9" strokeWidth={2.4} />
+          </span>
           <div className="min-w-0">
             <p className="text-3xl font-black leading-tight">Halo, Rina!</p>
             <p className="mt-1 text-base font-semibold leading-snug text-white/95">Semoga harimu selalu menyenangkan</p>
