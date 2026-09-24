@@ -25,30 +25,50 @@ jobs:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
           script_stop: true
           script: |
             set -e
 
-            cd "${{ secrets.APP_DIR }}"
+            cd "${{ secrets.BACKEND_SOURCE_DIR }}"
             git fetch origin "${{ inputs.ref }}"
             git checkout "${{ inputs.ref }}"
             git pull --ff-only origin "${{ inputs.ref }}"
-
-            cd pulsa-be
             go mod download
             go test ./...
             go build -o pulsa2 .
 
-            cd ../pulsa-fe
+            cd "${{ secrets.FRONTEND_SOURCE_DIR }}"
+            git fetch origin "${{ inputs.ref }}"
+            git checkout "${{ inputs.ref }}"
+            git pull --ff-only origin "${{ inputs.ref }}"
             npm ci
             npm run build
 
+            if [ -n "${{ secrets.FRONTEND_RELEASE_DIR }}" ] && [ "${{ secrets.FRONTEND_RELEASE_DIR }}" != "${{ secrets.FRONTEND_SOURCE_DIR }}" ]; then
+              mkdir -p "${{ secrets.FRONTEND_RELEASE_DIR }}"
+              rsync -a --delete \
+                --exclude ".git" \
+                --exclude "node_modules" \
+                --exclude ".env.local" \
+                "${{ secrets.FRONTEND_SOURCE_DIR }}/" \
+                "${{ secrets.FRONTEND_RELEASE_DIR }}/"
+
+              cd "${{ secrets.FRONTEND_RELEASE_DIR }}"
+              npm ci --omit=dev
+            fi
+
             if command -v pm2 >/dev/null 2>&1; then
-              pm2 restart "${{ secrets.PM2_APP_NAME }}" --update-env
+              if [ -n "${{ secrets.PM2_BACKEND_APP_NAME }}" ]; then
+                pm2 restart "${{ secrets.PM2_BACKEND_APP_NAME }}" --update-env
+              fi
+              if [ -n "${{ secrets.PM2_FRONTEND_APP_NAME }}" ]; then
+                pm2 restart "${{ secrets.PM2_FRONTEND_APP_NAME }}" --update-env
+              fi
               pm2 save
             else
               echo "pm2 not found. Build completed, restart the app manually."
