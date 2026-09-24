@@ -1,21 +1,9 @@
-import { Suspense } from "react";
 import Script from "next/script";
-import { getServerSession } from "next-auth";
 import type { Metadata } from "next";
-import { authOptions } from "@/lib/nextauth";
 import { getCategories } from "@/lib/api.products";
-import type { UserCategoryItem, UserSession } from "@/components/user/types";
-import { UserFavoriteTransactions, UserMonthlyBills, UserRecentActivity } from "@/components/user/UserMainSections";
-import { GuestBottomNav } from "@/components/guest/GuestBottomNav";
-import { GuestCategoryGrid } from "@/components/guest/GuestCategoryGrid";
-import { GuestAdsSection } from "@/components/guest/GuestAdsSection";
-import { GuestAdsCarouselSkeleton } from "@/components/guest/GuestAdsCarouselSkeleton";
+import type { UserCategoryItem } from "@/components/user/types";
+import { TopunaReferenceHome } from "@/components/site/TopunaReferenceHome";
 import { CANONICAL_SITE_URL } from "@/lib/seo-articles";
-
-type SessionShape = {
-  user?: UserSession;
-  backendToken?: string;
-};
 
 const homeTitle = "Topuna | Pulsa, Paket Data, E-Wallet, Token Listrik, Game & PPOB";
 const homeDescription =
@@ -60,7 +48,6 @@ export const metadata: Metadata = {
 };
 
 export default async function GuestHomePage() {
-  const session = (await getServerSession(authOptions)) as SessionShape | null;
   const categories = (await getCategories()) as UserCategoryItem[];
   const activeCategories = categories.filter((item) => item.aktif);
 
@@ -149,17 +136,7 @@ export default async function GuestHomePage() {
       <Script id="homepage-faq-jsonld" type="application/ld+json">
         {JSON.stringify(faqJsonLd)}
       </Script>
-      <div className="space-y-4 px-4 pt-4">
-        <GuestCategoryGrid items={categories} />
-        <Suspense fallback={<GuestAdsCarouselSkeleton />}>
-          <GuestAdsSection />
-        </Suspense>
-        <UserRecentActivity href="/kategori" />
-        <UserFavoriteTransactions href="/kategori" />
-        <UserMonthlyBills href="/listrik/tagihan" />
-      </div>
-
-      <GuestBottomNav isLoggedIn={!!session?.backendToken} />
+      <TopunaReferenceHome />
     </main>
   );
 }
