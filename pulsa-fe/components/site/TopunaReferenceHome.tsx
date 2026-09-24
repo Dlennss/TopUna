@@ -1,77 +1,144 @@
 import Link from "next/link";
+import { Bell, Eye, History, Home, Plus, ReceiptText, Send, ShieldCheck, UserRound, WalletCards } from "lucide-react";
 
 const assetBase = "/topuna-assets/Topuna_Assets_Pecah";
 
-function AssetImage({
-  src,
-  alt,
-  className = "",
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-}) {
-  return <img src={`${assetBase}/${src}`} alt={alt} className={`block h-auto select-none ${className}`} draggable={false} />;
-}
+const services = [
+  { label: "Pulsa & Data", href: "/pulsa-data", icon: "05_service_icons/pulsa_data_icon.png" },
+  { label: "Paket Internet", href: "/paket-data", icon: "05_service_icons/paket_internet_icon.png" },
+  { label: "Token Listrik", href: "/listrik/token", icon: "05_service_icons/token_listrik_icon.png" },
+  { label: "E-Wallet", href: "/ewallet", icon: "05_service_icons/ewallet_icon.png" },
+  { label: "Tagihan", href: "/listrik/tagihan", icon: "05_service_icons/tagihan_icon.png" },
+  { label: "Lainnya", href: "/kategori", icon: "05_service_icons/lainnya_icon.png" },
+];
 
-function OverlayLink({
-  href,
-  label,
-  className,
-}: {
-  href: string;
-  label: string;
-  className: string;
-}) {
-  return (
-    <Link href={href} prefetch={false} aria-label={label} className={`absolute block rounded-2xl ${className}`}>
-      <span className="sr-only">{label}</span>
-    </Link>
-  );
+const activities = [
+  { title: "Beli Paket Data", sub: "Telkomsel · 10 GB", amount: "- Rp 50.000", date: "12 Mar 2025, 14:32", icon: "06_activity/activity_icon_1.png" },
+  { title: "Token Listrik", sub: "PLN · 50.000", amount: "- Rp 50.000", date: "11 Mar 2025, 20:17", icon: "06_activity/activity_icon_2.png" },
+  { title: "Top Up E-Wallet", sub: "OVO · Top Up Saldo", amount: "- Rp 100.000", date: "10 Mar 2025, 09:21", icon: "06_activity/activity_icon_3.png" },
+];
+
+function asset(path: string) {
+  return `${assetBase}/${path}`;
 }
 
 export function TopunaReferenceHome() {
   return (
-    <div className="min-h-dvh bg-[#fff7fa]">
-      <div className="relative mx-auto w-full overflow-hidden bg-[#fff7fa] pb-[82px]">
-        <section className="relative">
-          <AssetImage src="09_section_blocks/top_header_stack.png" alt="Topuna dashboard header" className="w-full" />
-          <OverlayLink href="/user/account/topup" label="Isi Saldo" className="left-[7.2%] top-[76.6%] h-[16.9%] w-[30.1%]" />
-          <OverlayLink href="/user/saldo/kirim" label="Transfer" className="left-[38.9%] top-[76.6%] h-[16.9%] w-[27.6%]" />
-          <OverlayLink href="/transaksi" label="Riwayat" className="left-[68.1%] top-[76.6%] h-[16.9%] w-[27.6%]" />
-          <OverlayLink href="/login" label="Notifikasi" className="left-[77.2%] top-[8.3%] h-[17.1%] w-[9.2%] rounded-full" />
-          <OverlayLink href="/login" label="Akun" className="left-[88.2%] top-[8.3%] h-[17.1%] w-[9.6%] rounded-full" />
+    <div className="min-h-dvh bg-[#fff7fa] pb-24 text-[#08132c]">
+      <header className="relative overflow-hidden bg-[#c8133f] px-5 pb-11 pt-5 text-white">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/12" />
+        <div className="pointer-events-none absolute -right-14 top-24 h-56 w-56 rounded-full bg-[#ff6a8c]/45" />
+        <div className="pointer-events-none absolute -left-20 top-24 h-44 w-44 rounded-full bg-[#ee3a63]/40" />
+
+        <div className="relative flex items-start justify-between gap-4">
+          <Link href="/" className="flex min-w-0 items-center gap-3" prefetch={false}>
+            <img src={asset("01_header/logo_symbol.png")} alt="" className="h-14 w-14 shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-2xl font-black leading-6">Topuna</span>
+              <span className="mt-1 block text-xs font-black uppercase tracking-wide">Top Up, Lanjut Lagi</span>
+            </span>
+          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/login" aria-label="Notifikasi" className="relative grid h-12 w-12 place-items-center rounded-full border border-white/25 bg-white/12">
+              <Bell className="h-6 w-6" />
+              <span className="absolute right-2 top-1.5 h-3.5 w-3.5 rounded-full bg-cyan-300" />
+            </Link>
+            <Link href="/login" aria-label="Akun" className="grid h-12 w-12 place-items-center rounded-full border border-white/25 bg-white/12">
+              <UserRound className="h-6 w-6" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="relative mt-5 flex items-center gap-4">
+          <img src={asset("01_header/greeting_avatar.png")} alt="" className="h-[68px] w-[68px] rounded-full" />
+          <div className="min-w-0">
+            <p className="text-3xl font-black leading-tight">Halo, Rina!</p>
+            <p className="mt-1 text-base font-semibold leading-snug text-white/95">Semoga harimu selalu menyenangkan</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="-mt-8 space-y-5 px-5">
+        <section className="relative rounded-[22px] bg-white p-5 shadow-[0_16px_40px_rgba(102,21,44,0.14)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-base font-semibold text-slate-700">
+                <span>Saldo Topuna</span>
+                <Eye className="h-4 w-4 text-slate-500" />
+              </div>
+              <p className="mt-2 text-[40px] font-black leading-none tracking-normal text-[#06122e]">Rp 250.000</p>
+            </div>
+            <div className="hidden items-center gap-2 rounded-2xl bg-sky-50 px-3 py-2 sm:flex">
+              <ShieldCheck className="h-8 w-8 text-sky-600" />
+              <span className="text-xs font-bold leading-tight text-slate-700">Aman & Praktis<br /><span className="font-semibold text-slate-500">Transaksi 100% Terjamin</span></span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <Link href="/user/account/topup" className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[#cf0d3d] text-sm font-black text-white" prefetch={false}>
+              <Plus className="h-5 w-5" /> Isi Saldo
+            </Link>
+            <Link href="/user/saldo/kirim" className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 text-sm font-black text-[#cf0d3d]" prefetch={false}>
+              <Send className="h-5 w-5" /> Transfer
+            </Link>
+            <Link href="/transaksi" className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 text-sm font-black text-[#cf0d3d]" prefetch={false}>
+              <ReceiptText className="h-5 w-5" /> Riwayat
+            </Link>
+          </div>
         </section>
 
-        <section className="relative mt-[2.2%] px-[4.4%]">
-          <AssetImage src="09_section_blocks/banner_and_services.png" alt="Topuna services and banner" className="w-full" />
-          <OverlayLink href="/pulsa-data" label="Top Up Sekarang" className="left-[8.7%] top-[35.3%] h-[11.5%] w-[32.3%]" />
-          <OverlayLink href="/pulsa-data" label="Pulsa dan Data" className="left-[4.6%] top-[69.2%] h-[29.4%] w-[15.9%]" />
-          <OverlayLink href="/paket-data" label="Paket Internet" className="left-[22.0%] top-[69.2%] h-[29.4%] w-[16.1%]" />
-          <OverlayLink href="/listrik/token" label="Token Listrik" className="left-[39.6%] top-[69.2%] h-[29.4%] w-[16.1%]" />
-          <OverlayLink href="/ewallet" label="E-Wallet" className="left-[57.4%] top-[69.2%] h-[29.4%] w-[16.1%]" />
-          <OverlayLink href="/listrik/tagihan" label="Tagihan" className="left-[75.0%] top-[69.2%] h-[29.4%] w-[16.1%]" />
-          <OverlayLink href="/kategori" label="Lainnya" className="left-[92.5%] top-[69.2%] h-[29.4%] w-[7.0%]" />
+        <Link href="/paket-data" className="block overflow-hidden rounded-[20px] shadow-[0_14px_36px_rgba(102,21,44,0.12)]" prefetch={false}>
+          <img src={asset("03_banner/hero_banner_full.png")} alt="Paket Data untuk Koneksi Terbaik" className="block w-full" />
+        </Link>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl font-black">Layanan Favorit</h2>
+            <Link href="/kategori" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {services.map((item) => (
+              <Link key={item.label} href={item.href} prefetch={false} className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-white px-2 text-center shadow-sm">
+                <img src={asset(item.icon)} alt="" className="h-11 w-11 object-contain" />
+                <span className="text-[11px] font-bold leading-tight text-[#08132c]">{item.label}</span>
+              </Link>
+            ))}
+          </div>
         </section>
 
-        <section className="relative mt-[4.2%] px-[4.9%]">
-          <AssetImage src="06_activity/activity_card_full.png" alt="Aktivitas terakhir Topuna" className="w-full" />
-          <OverlayLink href="/transaksi" label="Lihat semua aktivitas" className="left-[78.7%] top-[4.9%] h-[12.8%] w-[17.8%]" />
+        <section className="rounded-[20px] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(102,21,44,0.10)]">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl font-black">Aktivitas Terakhir</h2>
+            <Link href="/transaksi" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {activities.map((item) => (
+              <div key={item.title} className="flex items-center gap-3 py-3">
+                <img src={asset(item.icon)} alt="" className="h-12 w-12 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-black">{item.title}</p>
+                  <p className="truncate text-sm font-semibold text-slate-500">{item.sub}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-black">{item.amount}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">{item.date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
-        <section className="relative mt-[3.0%] px-[4.8%]">
-          <AssetImage src="07_promo/promo_banner_full.png" alt="Cashback spesial Topuna" className="w-full" />
-          <OverlayLink href="/kategori" label="Lihat Promo" className="left-[76.0%] top-[24.1%] h-[61.1%] w-[20.0%]" />
-        </section>
-      </div>
+        <Link href="/kategori" className="block overflow-hidden rounded-[20px]" prefetch={false}>
+          <img src={asset("07_promo/promo_banner_full.png")} alt="Cashback spesial untuk kamu" className="block w-full" />
+        </Link>
+      </main>
 
-      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 overflow-hidden md:w-97.5 md:max-w-none">
-        <div className="relative">
-          <AssetImage src="08_bottom_nav/bottom_nav_full.png" alt="Navigasi Topuna" className="w-full" />
-          <OverlayLink href="/" label="Beranda" className="left-[6.8%] top-[40.3%] h-[37.0%] w-[14.1%]" />
-          <OverlayLink href="/transaksi" label="Riwayat" className="left-[32.2%] top-[40.3%] h-[37.0%] w-[15.2%]" />
-          <OverlayLink href="/user/saldo" label="Saldo" className="left-[56.7%] top-[40.3%] h-[37.0%] w-[13.4%]" />
-          <OverlayLink href="/login" label="Akun" className="left-[81.3%] top-[40.3%] h-[37.0%] w-[12.3%]" />
+      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] bg-white px-6 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_-12px_30px_rgba(51,24,37,0.12)] md:w-97.5">
+        <div className="grid grid-cols-4">
+          <Link href="/" className="flex flex-col items-center gap-1 text-[#f20d3e]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
+          <Link href="/transaksi" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-bold">Riwayat</span></Link>
+          <Link href="/user/saldo" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-bold">Saldo</span></Link>
+          <Link href="/login" className="flex flex-col items-center gap-1 text-slate-500" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-bold">Akun</span></Link>
         </div>
       </nav>
     </div>
