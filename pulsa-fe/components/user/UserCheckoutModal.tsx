@@ -1226,6 +1226,11 @@ export function UserCheckoutModal({
               </div>
             </div>
 
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-900">
+              Transaksi hanya diproses setelah tombol Bayar ditekan. Total di atas adalah biaya yang dikenakan untuk
+              transaksi ini; tidak ada biaya tersembunyi atau langganan otomatis.
+            </div>
+
             <label className="block space-y-2 text-sm">
               <span className="font-semibold text-slate-700">{destLabel}</span>
                   {destMode === "ml_id_server" ? (

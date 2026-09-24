@@ -4,6 +4,7 @@ import { SiteShell } from "@/components/site/SiteShell";
 import { authOptions } from "@/lib/nextauth";
 import type { UserSession } from "@/components/user/types";
 import { AppTopHeader } from "@/components/shared/AppTopHeader";
+import { BillingDisclosure } from "@/components/site/BillingDisclosure";
 
 export const metadata: Metadata = {
   title: "Topuna",
@@ -22,7 +23,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     <div className="min-h-dvh bg-[#fcf5f7] text-neutral-900 md:grid md:place-items-start md:py-4">
       <div className="relative mx-auto w-full max-w-md md:w-97.5 md:max-w-none md:border md:border-[#651e34]/10 md:bg-[#fcf5f7] md:shadow-[0_24px_80px_rgba(6,78,59,0.18)]">
         <AppTopHeader isLoggedIn={Boolean(session?.backendToken)} />
-        <SiteShell>{children}</SiteShell>
+        <SiteShell>
+          {children}
+          <BillingDisclosure />
+        </SiteShell>
       </div>
     </div>
   );
