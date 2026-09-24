@@ -1,6 +1,8 @@
 name: Deploy
 
 on:
+  push:
+    branches: ["main"]
   workflow_dispatch:
     inputs:
       ref:
@@ -33,6 +35,11 @@ jobs:
           script: |
             set -e
 
+            DEPLOY_REF="${{ github.ref_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.ref }}" ]; then
+              DEPLOY_REF="${{ inputs.ref }}"
+            fi
+
             BACKEND_DIR="${{ secrets.BACKEND_SOURCE_DIR }}"
             FRONTEND_DIR="${{ secrets.FRONTEND_SOURCE_DIR }}"
             BACKEND_REPO="$(dirname "$BACKEND_DIR")"
@@ -44,18 +51,18 @@ jobs:
             git config --global --add safe.directory "$FRONTEND_REPO"
 
             cd "$BACKEND_DIR"
-            git fetch origin "${{ inputs.ref }}"
-            git checkout "${{ inputs.ref }}"
-            git pull --ff-only origin "${{ inputs.ref }}"
+            git fetch origin "$DEPLOY_REF"
+            git checkout "$DEPLOY_REF"
+            git pull --ff-only origin "$DEPLOY_REF"
             echo "Backend deployed commit: $(git rev-parse --short HEAD)"
             go mod download
             go test ./...
             go build -o pulsa2 .
 
             cd "$FRONTEND_DIR"
-            git fetch origin "${{ inputs.ref }}"
-            git checkout "${{ inputs.ref }}"
-            git pull --ff-only origin "${{ inputs.ref }}"
+            git fetch origin "$DEPLOY_REF"
+            git checkout "$DEPLOY_REF"
+            git pull --ff-only origin "$DEPLOY_REF"
             echo "Frontend deployed commit: $(git rev-parse --short HEAD)"
             test -f package.json
             test -f components/site/TopunaReferenceHome.tsx
