@@ -45,27 +45,29 @@ jobs:
             BACKEND_REPO="$(dirname "$BACKEND_DIR")"
             FRONTEND_REPO="$(dirname "$FRONTEND_DIR")"
 
-            export GIT_CONFIG_GLOBAL="/tmp/topuna-gitconfig-$(id -u)-$$"
-            touch "$GIT_CONFIG_GLOBAL"
-            git config --global --add safe.directory "$BACKEND_DIR"
-            git config --global --add safe.directory "$FRONTEND_DIR"
-            git config --global --add safe.directory "$BACKEND_REPO"
-            git config --global --add safe.directory "$FRONTEND_REPO"
+            git_safe() {
+              git \
+                -c safe.directory="$BACKEND_DIR" \
+                -c safe.directory="$FRONTEND_DIR" \
+                -c safe.directory="$BACKEND_REPO" \
+                -c safe.directory="$FRONTEND_REPO" \
+                "$@"
+            }
 
             cd "$BACKEND_DIR"
-            git fetch origin "$DEPLOY_REF"
-            git checkout "$DEPLOY_REF"
-            git pull --ff-only origin "$DEPLOY_REF"
-            echo "Backend deployed commit: $(git rev-parse --short HEAD)"
+            git_safe fetch origin "$DEPLOY_REF"
+            git_safe checkout "$DEPLOY_REF"
+            git_safe pull --ff-only origin "$DEPLOY_REF"
+            echo "Backend deployed commit: $(git_safe rev-parse --short HEAD)"
             go mod download
             go test ./...
             go build -o pulsa2 .
 
             cd "$FRONTEND_DIR"
-            git fetch origin "$DEPLOY_REF"
-            git checkout "$DEPLOY_REF"
-            git pull --ff-only origin "$DEPLOY_REF"
-            echo "Frontend deployed commit: $(git rev-parse --short HEAD)"
+            git_safe fetch origin "$DEPLOY_REF"
+            git_safe checkout "$DEPLOY_REF"
+            git_safe pull --ff-only origin "$DEPLOY_REF"
+            echo "Frontend deployed commit: $(git_safe rev-parse --short HEAD)"
             test -f package.json
             test -f components/site/TopunaReferenceHome.tsx
             test -f public/topuna-assets/Topuna_Assets_Pecah/09_section_blocks/top_header_stack.png
