@@ -45,6 +45,8 @@ jobs:
             BACKEND_REPO="$(dirname "$BACKEND_DIR")"
             FRONTEND_REPO="$(dirname "$FRONTEND_DIR")"
 
+            export GIT_CONFIG_GLOBAL="/tmp/topuna-gitconfig-$(id -u)-$$"
+            touch "$GIT_CONFIG_GLOBAL"
             git config --global --add safe.directory "$BACKEND_DIR"
             git config --global --add safe.directory "$FRONTEND_DIR"
             git config --global --add safe.directory "$BACKEND_REPO"
