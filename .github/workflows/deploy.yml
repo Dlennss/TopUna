@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to deploy
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            cd "${{ secrets.APP_DIR }}"
+            git fetch origin "${{ inputs.ref }}"
+            git checkout "${{ inputs.ref }}"
+            git pull --ff-only origin "${{ inputs.ref }}"
+
+            cd pulsa-be
+            go mod download
+            go test ./...
+            go build -o pulsa2 .
+
+            cd ../pulsa-fe
+            npm ci
+            npm run build
+
+            if command -v pm2 >/dev/null 2>&1; then
+              pm2 restart "${{ secrets.PM2_APP_NAME }}" --update-env
+              pm2 save
+            else
+              echo "pm2 not found. Build completed, restart the app manually."
+            fi
