@@ -1,0 +1,18 @@
+{
+  "name": "Topuna",
+  "slug": "topuna",
+  "initials": "T",
+  "concept": "Optimistis, ekspresif dan ringkas",
+  "tagline": "Top up, lanjut lagi",
+  "primary": "#c93450",
+  "dark": "#651e34",
+  "accent": "#a2e2f2",
+  "tint": "#fcf5f7",
+  "border": "#efdee4",
+  "font": "Trebuchet MS, sans-serif",
+  "radius": 8,
+  "header": "solid",
+  "mark": "rise",
+  "port": 3103,
+  "backendPort": 8103
+}
