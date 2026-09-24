@@ -115,11 +115,10 @@ export function TopunaReferenceHome() {
           </div>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {services.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={false} className="flex min-h-[104px] flex-col items-center justify-center gap-2 rounded-[18px] border border-rose-100/80 bg-white px-2 text-center shadow-[0_6px_16px_rgba(71,22,39,0.08)] transition hover:-translate-y-0.5">
-                <span className={`grid h-12 w-12 place-items-center rounded-2xl ${item.tone}`}>
+              <Link key={item.label} href={item.href} prefetch={false} aria-label={item.label} className="flex min-h-[78px] items-center justify-center rounded-[18px] border border-rose-100/80 bg-white px-2 text-center shadow-[0_6px_16px_rgba(71,22,39,0.08)] transition hover:-translate-y-0.5">
+                <span className={`grid h-13 w-13 place-items-center rounded-2xl ${item.tone}`}>
                   <item.icon className="h-7 w-7" strokeWidth={2.5} />
                 </span>
-                <span className="max-w-[68px] text-[11px] font-black leading-tight text-[#08132c]">{item.label}</span>
               </Link>
             ))}
           </div>
