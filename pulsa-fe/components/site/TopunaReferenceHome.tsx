@@ -103,9 +103,9 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
             )}
           </span>
           <div className="min-w-0">
-            <p className="text-[28px] font-black leading-tight">{isLoggedIn ? `Halo, ${userName}!` : "Masuk ke akunmu"}</p>
+            <p className="text-[28px] font-black leading-tight">{isLoggedIn ? `Halo, ${userName}!` : "Selamat datang"}</p>
             <p className="mt-1 max-w-[250px] text-[15px] font-semibold leading-snug text-white/95">
-              {isLoggedIn ? "Semoga harimu selalu menyenangkan" : "Login untuk melihat saldo dan riwayat transaksi"}
+              {isLoggedIn ? "Semoga harimu selalu menyenangkan" : "Masuk untuk akses saldo dan riwayatmu"}
             </p>
           </div>
         </div>
@@ -136,16 +136,21 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
               </div>
             </>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <div className="flex items-center gap-2 text-base font-semibold text-slate-700">
-                  <span>Akun Topuna</span>
-                  <Eye className="h-4 w-4 text-slate-400" />
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-rose-50 text-[#cf0d3d] ring-1 ring-rose-100">
+                  <WalletCards className="h-6 w-6" strokeWidth={2.4} />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-black text-[#cf0d3d]">
+                    <span>Akun Topuna</span>
+                    <Eye className="h-4 w-4 text-rose-300" />
+                  </div>
+                  <p className="mt-1 text-[22px] font-black leading-tight text-[#06122e]">Saldo aman setelah login</p>
+                  <p className="mt-2 text-sm font-semibold leading-snug text-slate-500">Masuk untuk melihat saldo, nama akun, dan riwayat transaksi milikmu.</p>
                 </div>
-                <p className="mt-2 text-[28px] font-black leading-tight text-[#06122e]">Login untuk melihat saldo</p>
-                <p className="mt-2 text-sm font-semibold leading-snug text-slate-500">Nama pengguna, saldo, dan riwayat transaksi akan tampil setelah kamu masuk.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2.5 sm:w-40 sm:grid-cols-1">
+              <div className="grid grid-cols-2 gap-2.5">
                 <Link href="/login" className="flex h-12 items-center justify-center gap-2 rounded-[17px] bg-[#cf0d3d] px-4 text-sm font-black text-white shadow-[0_10px_20px_rgba(207,13,61,0.20)]" prefetch={false}>
                   <LogIn className="h-5 w-5" /> Masuk
                 </Link>
