@@ -48,8 +48,8 @@ export function TopunaReferenceHome() {
 
         <div className="relative flex items-center justify-between gap-3">
           <Link href="/" className="flex min-w-0 items-center gap-3" prefetch={false}>
-            <span className="grid h-13 w-13 shrink-0 place-items-center overflow-hidden rounded-[18px] bg-white/10">
-              <img src={asset("01_header/logo_symbol.png")} alt="" className="h-12 w-12" />
+            <span className="grid h-13 w-13 shrink-0 place-items-center rounded-[18px] border border-white/45 bg-white shadow-[0_10px_24px_rgba(81,7,31,0.18)]">
+              <img src="/brand/icon.svg" alt="" className="h-10 w-10" />
             </span>
             <span className="min-w-0">
               <span className="block text-[23px] font-black leading-6">Topuna</span>
