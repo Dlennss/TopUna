@@ -4,6 +4,7 @@ import {
   Bolt,
   Eye,
   FileText,
+  Gift,
   Grid3X3,
   History,
   Home,
@@ -161,18 +162,19 @@ export function TopunaReferenceHome() {
           </div>
         </section>
 
-        <Link href="/kategori" className="relative block overflow-hidden rounded-[22px] bg-linear-to-r from-rose-100 via-white to-rose-50 px-5 py-5 shadow-[0_12px_30px_rgba(102,21,44,0.10)] ring-1 ring-rose-100/80" prefetch={false}>
-          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#cf0d3d]/10" />
-          <div className="relative flex items-center gap-4">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-[#cf0d3d] shadow-sm">
-              <Plus className="h-7 w-7" strokeWidth={2.6} />
+        <Link href="/kategori" className="group relative block overflow-hidden rounded-[24px] bg-white px-5 py-5 shadow-[0_12px_30px_rgba(102,21,44,0.10)] ring-1 ring-rose-100/80" prefetch={false}>
+          <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-rose-100" />
+          <div className="pointer-events-none absolute -left-14 bottom-0 h-24 w-24 rounded-full bg-amber-100/70" />
+          <div className="relative grid grid-cols-[56px_minmax(0,1fr)] gap-4">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#cf0d3d] text-white shadow-[0_10px_22px_rgba(207,13,61,0.20)]">
+              <Gift className="h-7 w-7" strokeWidth={2.5} />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-base font-black text-[#08132c]">Cashback spesial untuk kamu</span>
-              <span className="mt-1 block text-sm font-semibold leading-snug text-slate-500">Pilih layanan favorit dan nikmati promo Topuna.</span>
-            </span>
-            <span className="hidden h-10 shrink-0 items-center rounded-full bg-[#cf0d3d] px-4 text-xs font-black text-white sm:inline-flex">
-              Lihat Promo
+            <span className="min-w-0">
+              <span className="block text-lg font-black leading-tight text-[#08132c]">Cashback spesial</span>
+              <span className="mt-1 block text-sm font-semibold leading-snug text-slate-500">Nikmati promo Topuna untuk transaksi pilihanmu.</span>
+              <span className="mt-3 inline-flex h-9 items-center rounded-full bg-rose-50 px-4 text-xs font-black text-[#cf0d3d] ring-1 ring-rose-100">
+                Lihat Promo
+              </span>
             </span>
           </div>
         </Link>
