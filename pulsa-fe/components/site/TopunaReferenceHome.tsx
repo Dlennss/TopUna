@@ -44,7 +44,9 @@ function formatIDR(value: number) {
 
 function firstName(value?: string | null) {
   const clean = String(value || "").trim();
-  return clean ? clean.split(/\s+/)[0] : "Teman";
+  const first = clean ? clean.split(/\s+/)[0] : "";
+  const legacyBrandNames = new Set(["pulsakilat", "pulsa-kilat", "topuna"]);
+  return first && !legacyBrandNames.has(first.toLowerCase()) ? first : "Teman";
 }
 
 export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
@@ -98,15 +100,13 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
         </div>
 
         <div className="relative mt-5 flex items-center gap-3">
-          <span className="grid h-15 w-15 shrink-0 overflow-hidden rounded-full border border-white/35 bg-white/18 text-white shadow-[0_12px_26px_rgba(79,7,30,0.18)]">
-            {isLoggedIn && viewer?.profilePhotoUrl ? (
-              <img src={viewer.profilePhotoUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <UserRound className="m-auto h-8 w-8" strokeWidth={2.4} />
-            )}
+          <span className="grid h-15 w-15 shrink-0 place-items-center rounded-full border border-white/35 bg-white/16 text-white shadow-[0_12px_26px_rgba(79,7,30,0.18)] ring-1 ring-white/10">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-white/12">
+              <UserRound className="h-7 w-7" strokeWidth={2.4} />
+            </span>
           </span>
           <div className="min-w-0">
-            <p className="text-[28px] font-black leading-tight">{isLoggedIn ? `Halo, ${userName}!` : "Selamat datang"}</p>
+            <p className="truncate text-[27px] font-black leading-tight">{isLoggedIn ? `Halo, ${userName}!` : "Selamat datang"}</p>
             <p className="mt-1 max-w-[250px] text-[15px] font-semibold leading-snug text-white/95">
               {isLoggedIn ? "Semoga harimu selalu menyenangkan" : "Masuk untuk akses saldo dan riwayatmu"}
             </p>
