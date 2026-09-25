@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   Bell,
   Bolt,
-  CreditCard,
   Eye,
   FileText,
   Grid3X3,
@@ -26,12 +25,6 @@ const services = [
   { label: "E-Wallet", href: "/ewallet", icon: WalletCards, tone: "bg-violet-50 text-[#7b44df]" },
   { label: "Tagihan", href: "/listrik/tagihan", icon: FileText, tone: "bg-emerald-50 text-[#16c59a]" },
   { label: "Lainnya", href: "/kategori", icon: Grid3X3, tone: "bg-slate-100 text-slate-500" },
-];
-
-const activities = [
-  { title: "Beli Paket Data", sub: "Telkomsel · 10 GB", amount: "- Rp 50.000", date: "12 Mar 2025, 14:32", icon: Wifi, tone: "bg-sky-50 text-[#129fe8]" },
-  { title: "Token Listrik", sub: "PLN · 50.000", amount: "- Rp 50.000", date: "11 Mar 2025, 20:17", icon: Bolt, tone: "bg-amber-50 text-[#f6b100]" },
-  { title: "Top Up E-Wallet", sub: "OVO · Top Up Saldo", amount: "- Rp 100.000", date: "10 Mar 2025, 09:21", icon: CreditCard, tone: "bg-violet-50 text-[#7040d8]" },
 ];
 
 function asset(path: string) {
@@ -129,11 +122,11 @@ export function TopunaReferenceHome() {
             <h2 className="text-xl font-black">Layanan Favorit</h2>
             <Link href="/kategori" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
           </div>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-6 gap-2.5">
             {services.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={false} aria-label={item.label} className="flex min-h-[78px] items-center justify-center rounded-[18px] border border-rose-100/80 bg-white px-2 text-center shadow-[0_6px_16px_rgba(71,22,39,0.08)] transition hover:-translate-y-0.5">
-                <span className={`grid h-13 w-13 place-items-center rounded-2xl ${item.tone}`}>
-                  <item.icon className="h-7 w-7" strokeWidth={2.5} />
+              <Link key={item.label} href={item.href} prefetch={false} aria-label={item.label} className="flex aspect-square items-center justify-center rounded-[20px] bg-white shadow-[0_8px_18px_rgba(71,22,39,0.08)] ring-1 ring-rose-100/70 transition hover:-translate-y-0.5">
+                <span className={`grid h-10 w-10 place-items-center rounded-full ${item.tone}`}>
+                  <item.icon className="h-5.5 w-5.5" strokeWidth={2.5} />
                 </span>
               </Link>
             ))}
@@ -145,22 +138,17 @@ export function TopunaReferenceHome() {
             <h2 className="text-xl font-black">Aktivitas Terakhir</h2>
             <Link href="/transaksi" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
           </div>
-          <div className="divide-y divide-slate-100">
-            {activities.map((item) => (
-              <div key={item.title} className="flex items-center gap-3 py-3">
-                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${item.tone}`}>
-                  <item.icon className="h-7 w-7" strokeWidth={2.6} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-black">{item.title}</p>
-                  <p className="truncate text-sm font-semibold text-slate-500">{item.sub}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-sm font-black">{item.amount}</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-400">{item.date}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex min-h-[118px] items-center gap-3 rounded-[18px] bg-[#fff7fa] px-4 py-4 ring-1 ring-rose-100/80">
+            <span className="grid h-13 w-13 shrink-0 place-items-center rounded-full bg-white text-[#cf0d3d] shadow-sm">
+              <ReceiptText className="h-7 w-7" strokeWidth={2.5} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-black text-[#08132c]">Belum ada aktivitas</p>
+              <p className="mt-1 text-sm font-semibold leading-snug text-slate-500">Transaksi kamu akan tampil otomatis di sini setelah pembelian pertama.</p>
+            </div>
+            <Link href="/kategori" prefetch={false} className="hidden h-11 shrink-0 items-center rounded-full bg-[#cf0d3d] px-4 text-xs font-black text-white sm:inline-flex">
+              Pilih Layanan
+            </Link>
           </div>
         </section>
 
