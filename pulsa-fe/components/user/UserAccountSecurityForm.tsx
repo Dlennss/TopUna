@@ -42,8 +42,8 @@ function PasswordField({
 }) {
   return (
     <label htmlFor={id} className="block">
-      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800">{label}</span>
-      <span className="flex h-13 items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.16em] text-[#cf0d3d]">{label}</span>
+      <span className="flex h-13 items-center rounded-2xl border border-rose-100 bg-rose-50/40 px-4 transition focus-within:border-[#cf0d3d] focus-within:bg-white focus-within:ring-4 focus-within:ring-rose-100">
         <KeyRound className="h-4 w-4 shrink-0 text-slate-400" />
         <input
           id={id}
@@ -55,7 +55,7 @@ function PasswordField({
           className="min-w-0 flex-1 bg-transparent px-3 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
           placeholder="Masukkan password"
         />
-        <button type="button" onClick={onToggle} disabled={disabled} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-emerald-50 hover:text-emerald-700" aria-label={visible ? `Sembunyikan ${label.toLowerCase()}` : `Tampilkan ${label.toLowerCase()}`}>
+        <button type="button" onClick={onToggle} disabled={disabled} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-rose-50 hover:text-[#cf0d3d]" aria-label={visible ? `Sembunyikan ${label.toLowerCase()}` : `Tampilkan ${label.toLowerCase()}`}>
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </span>
@@ -124,24 +124,26 @@ export function UserAccountSecurityForm({ authToken }: Props) {
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#651e34,#047857_62%,#4dcf38)] p-5 text-white shadow-[0_18px_40px_rgba(6,78,59,0.18)]">
+      <section className="relative overflow-hidden rounded-[28px] bg-[#c8133f] p-5 text-white shadow-[0_18px_40px_rgba(102,21,44,0.18)]">
+        <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-white/12" />
+        <div className="pointer-events-none absolute -right-2 bottom-0 h-28 w-28 rounded-full bg-[#ff6a8c]/35" />
         <div className="flex items-center gap-3">
           <Link href="/user/account" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/20" aria-label="Kembali ke akun">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-emerald-700">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#cf0d3d]">
             <ShieldCheck className="h-6 w-6" />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-100">Keamanan Akun</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Keamanan Akun</p>
             <h1 className="mt-1 text-2xl font-black">Ganti Password</h1>
           </div>
         </div>
       </section>
 
-      <form onSubmit={submit} className="overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-[0_16px_38px_rgba(6,78,59,0.08)]">
+      <form onSubmit={submit} className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_38px_rgba(102,21,44,0.08)] ring-1 ring-rose-100/80">
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-[#cf0d3d] ring-1 ring-rose-100">
             <LockKeyhole className="h-5 w-5" />
           </span>
           <div>
@@ -156,9 +158,9 @@ export function UserAccountSecurityForm({ authToken }: Props) {
           <PasswordField id="confirm-password" label="Konfirmasi Password Baru" value={confirmPassword} onChange={setConfirmPassword} visible={visible.confirm} onToggle={() => setVisible((current) => ({ ...current, confirm: !current.confirm }))} autoComplete="new-password" disabled={saving} />
 
           {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">{error}</div> : null}
-          {success ? <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4 shrink-0" />{success}</div> : null}
+          {success ? <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-[#cf0d3d]"><CheckCircle2 className="h-4 w-4 shrink-0" />{success}</div> : null}
 
-          <button type="submit" disabled={saving} className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,#c93450,#16a34a)] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(5,150,105,0.22)] disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="submit" disabled={saving} className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[#cf0d3d] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(207,13,61,0.22)] transition hover:bg-[#b90b36] disabled:cursor-not-allowed disabled:opacity-60">
             <Save className="h-4 w-4" />
             {saving ? "Menyimpan..." : "Simpan Password Baru"}
           </button>
