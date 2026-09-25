@@ -34,6 +34,14 @@ function asset(path: string) {
 export function TopunaReferenceHome() {
   return (
     <div className="min-h-dvh bg-[#fff7fa] pb-32 text-[#08132c]">
+      <style>{`
+        body:has([data-topuna-home="true"]) .brand-bottom-nav,
+        body:has([data-topuna-home="true"]) img[src*="bottom_nav_full"],
+        body:has([data-topuna-home="true"]) img[src*="home_indicator"] {
+          display: none !important;
+        }
+      `}</style>
+      <div data-topuna-home="true" className="sr-only" aria-hidden="true" />
       <header className="relative overflow-hidden bg-[#c8133f] px-5 pb-10 pt-5 text-white">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/12" />
         <div className="pointer-events-none absolute -right-14 top-24 h-56 w-56 rounded-full bg-[#ff6a8c]/45" />
