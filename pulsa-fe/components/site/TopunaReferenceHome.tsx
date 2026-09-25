@@ -44,9 +44,7 @@ function formatIDR(value: number) {
 
 function firstName(value?: string | null) {
   const clean = String(value || "").trim();
-  const first = clean ? clean.split(/\s+/)[0] : "";
-  const legacyBrandNames = new Set(["pulsakilat", "pulsa-kilat", "topuna"]);
-  return first && !legacyBrandNames.has(first.toLowerCase()) ? first : "Teman";
+  return clean ? clean.split(/\s+/)[0] : "Teman";
 }
 
 export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
