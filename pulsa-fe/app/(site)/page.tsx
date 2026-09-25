@@ -1,9 +1,11 @@
 import Script from "next/script";
 import type { Metadata } from "next";
+import { getUserProfile } from "@/lib/api.auth";
 import { getCategories } from "@/lib/api.products";
 import type { UserCategoryItem } from "@/components/user/types";
 import { TopunaReferenceHome } from "@/components/site/TopunaReferenceHome";
 import { CANONICAL_SITE_URL } from "@/lib/seo-articles";
+import { getAppServerSession } from "@/lib/server-auth";
 
 const homeTitle = "Topuna | Pulsa, Paket Data, E-Wallet, Token Listrik, Game & PPOB";
 const homeDescription =
@@ -48,7 +50,11 @@ export const metadata: Metadata = {
 };
 
 export default async function GuestHomePage() {
-  const categories = (await getCategories()) as UserCategoryItem[];
+  const [categories, session] = await Promise.all([
+    getCategories() as Promise<UserCategoryItem[]>,
+    getAppServerSession(),
+  ]);
+  const profile = session?.backendToken ? await getUserProfile(session.backendToken).catch(() => null) : null;
   const activeCategories = categories.filter((item) => item.aktif);
 
   const websiteJsonLd = {
@@ -136,7 +142,14 @@ export default async function GuestHomePage() {
       <Script id="homepage-faq-jsonld" type="application/ld+json">
         {JSON.stringify(faqJsonLd)}
       </Script>
-      <TopunaReferenceHome />
+      <TopunaReferenceHome
+        viewer={{
+          isLoggedIn: Boolean(session?.backendToken && profile),
+          name: profile?.nama || session?.user?.name || session?.user?.email || null,
+          saldo: profile?.saldo ?? null,
+          profilePhotoUrl: profile?.profile_photo_url || session?.user?.image || null,
+        }}
+      />
     </main>
   );
 }
