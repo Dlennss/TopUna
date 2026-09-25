@@ -6,8 +6,8 @@ import { History, House, UserRound, WalletCards } from "lucide-react";
 
 function navClass(active: boolean) {
   return active
-    ? "flex min-w-0 flex-col items-center gap-1.5 py-1 text-[#c93450]! visited:text-[#c93450]!"
-    : "flex min-w-0 flex-col items-center gap-1.5 py-1 text-slate-400! transition visited:text-slate-400! hover:text-[#651e34]!";
+    ? "flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 py-2 text-[#cf0d3d]! visited:text-[#cf0d3d]!"
+    : "flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-[18px] py-2 text-[#08132c]! transition visited:text-[#08132c]! hover:bg-rose-50 hover:text-[#cf0d3d]!";
 }
 
 function isActivePath(pathname: string, basePath: string) {
@@ -25,8 +25,8 @@ export function UserBottomNav() {
   const homeActive = isActivePath(pathname, "/user") && !trxActive && !accountActive && !saldoActive;
 
   return (
-    <section className="brand-bottom-nav fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 overflow-hidden rounded-t-[24px] border-t border-[#651e34]/10 bg-white/96 shadow-[0_-14px_34px_rgba(6,78,59,0.10)] backdrop-blur-xl md:bottom-0 md:w-97.5 md:max-w-none">
-      <div className="grid grid-cols-4 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2.5">
+    <section className="brand-bottom-nav fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 overflow-hidden rounded-t-[24px] border-t border-rose-100 bg-white shadow-[0_-10px_28px_rgba(51,24,37,0.10)] md:bottom-0 md:w-97.5 md:max-w-none">
+      <div className="grid h-[86px] grid-cols-4 gap-2 px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3">
         <Link href="/user" className={navClass(homeActive)}>
           <House className={iconClass} strokeWidth={1.65} />
           <span className={textClass}>Beranda</span>
