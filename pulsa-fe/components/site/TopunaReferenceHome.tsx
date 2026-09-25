@@ -36,8 +36,12 @@ export function TopunaReferenceHome() {
     <div className="min-h-dvh bg-[#fff7fa] pb-32 text-[#08132c]">
       <style>{`
         body:has([data-topuna-home="true"]) .brand-bottom-nav,
+        body:has([data-topuna-home="true"]) [class*="brand-bottom-nav"],
+        body:has([data-topuna-home="true"]) nav:not([data-topuna-main-nav="true"]),
+        body:has([data-topuna-home="true"]) section[class*="fixed"][class*="bottom"],
         body:has([data-topuna-home="true"]) img[src*="bottom_nav_full"],
-        body:has([data-topuna-home="true"]) img[src*="home_indicator"] {
+        body:has([data-topuna-home="true"]) img[src*="home_indicator"],
+        body:has([data-topuna-home="true"]) img[src*="08_bottom_nav"] {
           display: none !important;
         }
       `}</style>
@@ -162,7 +166,7 @@ export function TopunaReferenceHome() {
         </Link>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[90] mx-auto w-full max-w-md border-t border-rose-100/80 bg-white px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(51,24,37,0.10)] md:w-97.5">
+      <nav data-topuna-main-nav="true" className="fixed inset-x-0 bottom-0 z-[90] mx-auto w-full max-w-md border-t border-rose-100/80 bg-white px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(51,24,37,0.10)] md:w-97.5">
         <div className="grid h-[72px] grid-cols-4 gap-2">
           <Link href="/" className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 text-[#08132c]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black leading-none">Beranda</span></Link>
           <Link href="/transaksi" className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-black leading-none">Riwayat</span></Link>
