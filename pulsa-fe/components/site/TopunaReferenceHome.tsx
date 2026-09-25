@@ -154,12 +154,12 @@ export function TopunaReferenceHome() {
         </Link>
       </main>
 
-      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] border border-white/80 bg-white/95 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-14px_34px_rgba(51,24,37,0.14)] backdrop-blur-xl md:w-97.5">
-        <div className="grid grid-cols-4 gap-1">
-          <Link href="/" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50 text-[#f20d3e]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
-          <Link href="/transaksi" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-bold">Riwayat</span></Link>
-          <Link href="/user/saldo" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-bold">Saldo</span></Link>
-          <Link href="/login" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-bold">Akun</span></Link>
+      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 overflow-hidden rounded-t-[28px] bg-white px-4 pb-[calc(0.95rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-14px_34px_rgba(51,24,37,0.12)] md:w-97.5">
+        <div className="grid grid-cols-4 gap-2">
+          <Link href="/" className="flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 text-[#08132c]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
+          <Link href="/transaksi" className="flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-black">Riwayat</span></Link>
+          <Link href="/user/saldo" className="flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-black">Saldo</span></Link>
+          <Link href="/login" className="flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-black">Akun</span></Link>
         </div>
       </nav>
     </div>
