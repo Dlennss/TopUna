@@ -86,20 +86,16 @@ export function TopunaReferenceHome() {
               <Eye className="h-4 w-4 text-slate-500" />
             </div>
             <p className="mt-2 whitespace-nowrap text-[42px] font-black leading-none tracking-normal text-[#06122e]">Rp 250.000</p>
-            <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-2xl bg-sky-50 px-3 py-2 text-sky-700">
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-sky-500 text-[11px] font-black text-white">✓</span>
-              <span className="text-xs font-bold leading-tight text-slate-600">Aman & praktis, transaksi terjamin</span>
-            </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <Link href="/user/account/topup" className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-[#cf0d3d] text-sm font-black text-white" prefetch={false}>
+          <div className="mt-6 grid grid-cols-3 gap-2.5">
+            <Link href="/user/account/topup" className="flex h-13 items-center justify-center gap-1.5 rounded-[18px] bg-[#cf0d3d] px-2 text-sm font-black text-white shadow-[0_10px_20px_rgba(207,13,61,0.20)]" prefetch={false}>
               <Plus className="h-5 w-5" /> Isi Saldo
             </Link>
-            <Link href="/user/saldo/kirim" className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 text-sm font-black text-[#cf0d3d]" prefetch={false}>
+            <Link href="/user/saldo/kirim" className="flex h-13 items-center justify-center gap-1.5 rounded-[18px] border border-rose-100 bg-rose-50 px-2 text-sm font-black text-[#08132c]" prefetch={false}>
               <Send className="h-5 w-5" /> Transfer
             </Link>
-            <Link href="/transaksi" className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 text-sm font-black text-[#cf0d3d]" prefetch={false}>
+            <Link href="/transaksi" className="flex h-13 items-center justify-center gap-1.5 rounded-[18px] border border-rose-100 bg-rose-50 px-2 text-sm font-black text-[#08132c]" prefetch={false}>
               <ReceiptText className="h-5 w-5" /> Riwayat
             </Link>
           </div>
