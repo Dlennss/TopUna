@@ -33,7 +33,7 @@ function asset(path: string) {
 
 export function TopunaReferenceHome() {
   return (
-    <div className="min-h-dvh bg-[#fff7fa] pb-24 text-[#08132c]">
+    <div className="min-h-dvh bg-[#fff7fa] pb-32 text-[#08132c]">
       <header className="relative overflow-hidden bg-[#c8133f] px-5 pb-10 pt-5 text-white">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/12" />
         <div className="pointer-events-none absolute -right-14 top-24 h-56 w-56 rounded-full bg-[#ff6a8c]/45" />
@@ -71,7 +71,7 @@ export function TopunaReferenceHome() {
         </div>
       </header>
 
-      <main className="-mt-8 space-y-5 px-5">
+      <main className="-mt-8 space-y-5 px-5 pb-8">
         <section className="relative rounded-[22px] bg-white p-5 shadow-[0_16px_40px_rgba(102,21,44,0.14)]">
           <div>
             <div className="flex items-center gap-2 text-base font-semibold text-slate-700">
@@ -133,22 +133,19 @@ export function TopunaReferenceHome() {
           </div>
         </section>
 
-        <section className="rounded-[20px] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(102,21,44,0.10)]">
+        <section className="rounded-[22px] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(102,21,44,0.10)]">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-xl font-black">Aktivitas Terakhir</h2>
             <Link href="/transaksi" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
           </div>
-          <div className="flex min-h-[118px] items-center gap-3 rounded-[18px] bg-[#fff7fa] px-4 py-4 ring-1 ring-rose-100/80">
-            <span className="grid h-13 w-13 shrink-0 place-items-center rounded-full bg-white text-[#cf0d3d] shadow-sm">
-              <ReceiptText className="h-7 w-7" strokeWidth={2.5} />
+          <div className="flex min-h-[96px] items-center gap-3 rounded-[18px] bg-linear-to-r from-rose-50 via-white to-white px-4 py-4 ring-1 ring-rose-100/80">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#cf0d3d] shadow-sm ring-1 ring-rose-100">
+              <ReceiptText className="h-6 w-6" strokeWidth={2.5} />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-base font-black text-[#08132c]">Belum ada aktivitas</p>
-              <p className="mt-1 text-sm font-semibold leading-snug text-slate-500">Transaksi kamu akan tampil otomatis di sini setelah pembelian pertama.</p>
+              <p className="mt-1 text-sm font-semibold leading-snug text-slate-500">Riwayat transaksi akan muncul setelah pembelian pertama.</p>
             </div>
-            <Link href="/kategori" prefetch={false} className="hidden h-11 shrink-0 items-center rounded-full bg-[#cf0d3d] px-4 text-xs font-black text-white sm:inline-flex">
-              Pilih Layanan
-            </Link>
           </div>
         </section>
 
@@ -157,7 +154,7 @@ export function TopunaReferenceHome() {
         </Link>
       </main>
 
-      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] border border-white/80 bg-white/95 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-14px_34px_rgba(51,24,37,0.14)] backdrop-blur-xl md:w-97.5">
+      <nav className="fixed bottom-0 left-1/2 z-[90] w-full max-w-md -translate-x-1/2 rounded-t-[28px] border border-white/80 bg-white/95 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-14px_34px_rgba(51,24,37,0.14)] backdrop-blur-xl md:w-97.5">
         <div className="grid grid-cols-4 gap-1">
           <Link href="/" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl bg-rose-50 text-[#f20d3e]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black">Beranda</span></Link>
           <Link href="/transaksi" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-slate-500" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-bold">Riwayat</span></Link>
