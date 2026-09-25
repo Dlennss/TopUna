@@ -2,13 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera } from "lucide-react";
+import { Camera, UserRound } from "lucide-react";
 
 type UserProfilePhotoUploaderProps = {
   name: string;
   email: string;
   phone: string;
-  initials: string;
   profilePhotoURL?: string;
 };
 
@@ -49,7 +48,6 @@ function resizeProfilePhoto(file: File): Promise<string> {
 export function UserProfilePhotoUploader({
   name,
   phone,
-  initials,
   profilePhotoURL = "",
 }: UserProfilePhotoUploaderProps) {
   const router = useRouter();
@@ -95,18 +93,22 @@ export function UserProfilePhotoUploader({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="relative block cursor-pointer rounded-[28px] outline-none transition active:scale-95 focus-visible:ring-4 focus-visible:ring-white/30"
+        className="relative block cursor-pointer rounded-full outline-none transition active:scale-95 focus-visible:ring-4 focus-visible:ring-white/30"
         aria-label="Pilih foto profil"
       >
-        <span className="relative grid h-20 w-20 overflow-hidden rounded-[26px] bg-white text-2xl font-black text-[#c93450] shadow-[0_16px_34px_rgba(6,78,59,0.18)]">
+        <span className="relative grid h-20 w-20 overflow-hidden rounded-full border border-white/45 bg-white/16 text-white shadow-[0_16px_34px_rgba(81,7,31,0.18)] ring-1 ring-white/10">
           {photo ? (
             <span className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} />
           ) : (
-            <span className="grid h-full w-full place-items-center">{initials}</span>
+            <span className="grid h-full w-full place-items-center">
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-white/12">
+                <UserRound className="h-8 w-8" strokeWidth={2.4} />
+              </span>
+            </span>
           )}
           {loading ? <span className="absolute inset-0 grid place-items-center bg-black/30"><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" /></span> : null}
         </span>
-        <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border-3 border-[#c93450] bg-white text-[#c93450] shadow-[0_8px_18px_rgba(6,78,59,0.18)]">
+        <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border-3 border-[#c8133f] bg-white text-[#cf0d3d] shadow-[0_8px_18px_rgba(102,21,44,0.18)]">
           <Camera className="h-4 w-4" strokeWidth={2.4} />
         </span>
       </button>

@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { getAppServerSession } from "@/lib/server-auth";
 import { getUserProfile } from "@/lib/api.auth";
-import { getInitials } from "@/components/user/helpers";
 import type { UserSession } from "@/components/user/types";
 import { UserBottomNav } from "@/components/user/UserBottomNav";
 import { UserLogoutButton } from "@/components/user/UserLogoutButton";
@@ -69,8 +68,7 @@ export default async function UserAccountPage() {
   const displayEmail = profile?.email || user?.email || "-";
   const profileWithPhone = profile as typeof profile & { phone?: string; no_hp?: string; nomor_hp?: string; telepon?: string };
   const phone = profileWithPhone?.phone || profileWithPhone?.no_hp || profileWithPhone?.nomor_hp || profileWithPhone?.telepon || "-";
-  const username = displayEmail !== "-" ? `@${displayEmail.split("@")[0]}` : "@pulsakilat";
-  const initials = getInitials(displayName, displayEmail);
+  const username = displayEmail !== "-" ? `@${displayEmail.split("@")[0]}` : "@topuna";
   const profilePhotoURL = profile?.profile_photo_url || user?.image || "";
   const role = normalizeRole(profile?.role || user?.role);
   const canManageRetailNetwork = role === "master" || role === "agent";
@@ -153,21 +151,21 @@ export default async function UserAccountPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#f3f7f5] pb-24">
-      <section className="relative overflow-hidden rounded-b-[32px] bg-[linear-gradient(135deg,#052e26_0%,#047857_58%,#84cc16_145%)] px-4 pb-8 pt-7 text-white shadow-[0_20px_44px_rgba(4,120,87,0.24)]">
-        <div className="pointer-events-none absolute -left-14 -top-16 h-40 w-40 rounded-full border border-white/10 bg-white/8" />
-        <div className="pointer-events-none absolute -right-10 top-7 h-32 w-32 rounded-full bg-white/10" />
+    <main className="min-h-screen bg-[#fff7fa] pb-24">
+      <section className="relative overflow-hidden rounded-b-[32px] bg-[#c8133f] px-4 pb-8 pt-7 text-white shadow-[0_20px_44px_rgba(102,21,44,0.22)]">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/12" />
+        <div className="pointer-events-none absolute -right-8 top-28 h-36 w-36 rounded-full bg-[#ff6a8c]/35" />
+        <div className="pointer-events-none absolute -left-20 top-6 h-40 w-40 rounded-full bg-[#ee3a63]/35" />
         <div className="mx-auto flex w-full max-w-md flex-col items-center text-center">
           <UserProfilePhotoUploader
             name={displayName}
             email={displayEmail}
             phone={phone}
-            initials={initials}
             profilePhotoURL={profilePhotoURL}
           />
-          <h1 className="mt-4 max-w-full truncate text-lg font-black tracking-tight">{displayName}</h1>
+          <h1 className="mt-4 max-w-full truncate text-xl font-black tracking-tight">{displayName}</h1>
           <p className="mt-0.5 max-w-full truncate text-[11px] font-bold text-white/75">{username}</p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-[10px] font-black text-white ring-1 ring-white/15">
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-[10px] font-black text-white ring-1 ring-white/20">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.4} />
             Akun Topuna aktif
           </div>
@@ -175,7 +173,7 @@ export default async function UserAccountPage() {
       </section>
 
       <div className="mx-auto -mt-4 w-full max-w-md space-y-3.5 px-4">
-        <section className="overflow-hidden rounded-[22px] border border-emerald-950/5 bg-white shadow-[0_16px_36px_rgba(6,78,59,0.08)]">
+        <section className="overflow-hidden rounded-[22px] bg-white shadow-[0_16px_36px_rgba(102,21,44,0.08)] ring-1 ring-rose-100/80">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
             <h2 className="text-sm font-black text-slate-950">Informasi Pribadi</h2>
             <Link href="/user/account/edit" className="text-[10px] font-black text-[#c93450]">Edit</Link>
@@ -196,7 +194,7 @@ export default async function UserAccountPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[22px] border border-emerald-950/5 bg-white shadow-[0_16px_36px_rgba(6,78,59,0.08)]">
+        <section className="overflow-hidden rounded-[22px] bg-white shadow-[0_16px_36px_rgba(102,21,44,0.08)] ring-1 ring-rose-100/80">
           <div className="divide-y divide-slate-100">
             {settingItems.map((item) => {
               const Icon = item.icon;
@@ -204,9 +202,9 @@ export default async function UserAccountPage() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-emerald-50/50"
+                  className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-rose-50/70"
                 >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-[#c93450]">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-[#c93450] ring-1 ring-rose-100">
                     <Icon className="h-5 w-5" strokeWidth={2.2} />
                   </span>
                   <span className="min-w-0 flex-1">
