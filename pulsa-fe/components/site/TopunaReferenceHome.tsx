@@ -26,12 +26,12 @@ type TopunaHomeViewer = {
 };
 
 const services = [
-  { label: "Pulsa & Data", href: "/pulsa-data", icon: Smartphone, tone: "bg-rose-50 text-[#f0184f]" },
-  { label: "Paket Internet", href: "/paket-data", icon: Wifi, tone: "bg-sky-50 text-[#129fe8]" },
-  { label: "Token Listrik", href: "/listrik/token", icon: Bolt, tone: "bg-amber-50 text-[#f6b100]" },
-  { label: "E-Wallet", href: "/ewallet", icon: WalletCards, tone: "bg-violet-50 text-[#7b44df]" },
-  { label: "Tagihan", href: "/listrik/tagihan", icon: FileText, tone: "bg-emerald-50 text-[#16c59a]" },
-  { label: "Lainnya", href: "/kategori", icon: Grid3X3, tone: "bg-slate-100 text-slate-500" },
+  { label: "Pulsa & Data", guestHref: "/pulsa-data", userHref: "/user/pulsa-data", icon: Smartphone, tone: "bg-rose-50 text-[#f0184f]" },
+  { label: "Paket Internet", guestHref: "/paket-data", userHref: "/user/paket-data", icon: Wifi, tone: "bg-sky-50 text-[#129fe8]" },
+  { label: "Token Listrik", guestHref: "/listrik/token", userHref: "/user/listrik/token", icon: Bolt, tone: "bg-amber-50 text-[#f6b100]" },
+  { label: "E-Wallet", guestHref: "/ewallet", userHref: "/user/ewallet", icon: WalletCards, tone: "bg-violet-50 text-[#7b44df]" },
+  { label: "Tagihan", guestHref: "/listrik/tagihan", userHref: "/user/listrik/tagihan", icon: FileText, tone: "bg-emerald-50 text-[#16c59a]" },
+  { label: "Lainnya", guestHref: "/kategori", userHref: "/user/kategori", icon: Grid3X3, tone: "bg-slate-100 text-slate-500" },
 ];
 
 function formatIDR(value: number) {
@@ -51,6 +51,9 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
   const isLoggedIn = Boolean(viewer?.isLoggedIn);
   const userName = firstName(viewer?.name);
   const saldo = formatIDR(Number(viewer?.saldo || 0));
+  const homeHref = isLoggedIn ? "/user" : "/";
+  const categoryHref = isLoggedIn ? "/user/kategori" : "/kategori";
+  const paketDataHref = isLoggedIn ? "/user/paket-data" : "/paket-data";
   const accountHref = isLoggedIn ? "/user/account" : "/login";
   const notificationHref = isLoggedIn ? "/user/transaksi" : "/login";
 
@@ -74,7 +77,7 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
         <div className="pointer-events-none absolute -left-20 top-24 h-44 w-44 rounded-full bg-[#ee3a63]/40" />
 
         <div className="relative flex items-center justify-between gap-3">
-          <Link href="/" className="flex min-w-0 items-center gap-3" prefetch={false}>
+          <Link href={homeHref} className="flex min-w-0 items-center gap-3" prefetch={false}>
             <span className="grid h-13 w-13 shrink-0 place-items-center rounded-[18px] border border-white/45 bg-white shadow-[0_10px_24px_rgba(81,7,31,0.18)]">
               <img src="/brand/icon.svg" alt="" className="h-10 w-10" />
             </span>
@@ -162,7 +165,7 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
           )}
         </section>
 
-        <Link href="/paket-data" className="relative block min-h-[150px] overflow-hidden rounded-[22px] bg-[#c8133f] px-5 py-5 text-white shadow-[0_14px_36px_rgba(102,21,44,0.14)]" prefetch={false}>
+        <Link href={paketDataHref} className="relative block min-h-[150px] overflow-hidden rounded-[22px] bg-[#c8133f] px-5 py-5 text-white shadow-[0_14px_36px_rgba(102,21,44,0.14)]" prefetch={false}>
           <div className="pointer-events-none absolute -right-10 -top-16 h-44 w-44 rounded-full bg-white/16" />
           <div className="pointer-events-none absolute -right-2 bottom-0 h-28 w-28 rounded-full bg-[#ff6a8c]/45" />
           <div className="pointer-events-none absolute left-32 top-10 h-20 w-44 -rotate-12 rounded-full border border-white/25" />
@@ -188,11 +191,11 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-xl font-black">Layanan Favorit</h2>
-            <Link href="/kategori" className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
+            <Link href={categoryHref} className="text-sm font-semibold text-slate-500" prefetch={false}>Lihat Semua</Link>
           </div>
           <div className="grid grid-cols-6 gap-2.5">
             {services.map((item) => (
-              <Link key={item.label} href={item.href} prefetch={false} aria-label={item.label} className="flex aspect-square items-center justify-center rounded-[20px] bg-white shadow-[0_8px_18px_rgba(71,22,39,0.08)] ring-1 ring-rose-100/70 transition hover:-translate-y-0.5">
+              <Link key={item.label} href={isLoggedIn ? item.userHref : item.guestHref} prefetch={false} aria-label={item.label} className="flex aspect-square items-center justify-center rounded-[20px] bg-white shadow-[0_8px_18px_rgba(71,22,39,0.08)] ring-1 ring-rose-100/70 transition hover:-translate-y-0.5">
                 <span className={`grid h-10 w-10 place-items-center rounded-full ${item.tone}`}>
                   <item.icon className="h-5.5 w-5.5" strokeWidth={2.5} />
                 </span>
@@ -217,7 +220,7 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
           </div>
         </section>
 
-        <Link href="/kategori" className="group relative block overflow-hidden rounded-[24px] bg-white px-5 py-5 shadow-[0_12px_30px_rgba(102,21,44,0.10)] ring-1 ring-rose-100/80" prefetch={false}>
+        <Link href={categoryHref} className="group relative block overflow-hidden rounded-[24px] bg-white px-5 py-5 shadow-[0_12px_30px_rgba(102,21,44,0.10)] ring-1 ring-rose-100/80" prefetch={false}>
           <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-rose-100" />
           <div className="pointer-events-none absolute -left-14 bottom-0 h-24 w-24 rounded-full bg-amber-100/70" />
           <div className="relative grid grid-cols-[56px_minmax(0,1fr)] gap-4">
@@ -237,7 +240,7 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
 
       <nav data-topuna-main-nav="true" className="fixed inset-x-0 bottom-0 z-[90] mx-auto w-full max-w-md border-t border-rose-100/80 bg-white px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(51,24,37,0.10)] md:w-97.5">
         <div className="grid h-[72px] grid-cols-4 gap-2">
-          <Link href="/" className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 text-[#08132c]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black leading-none">Beranda</span></Link>
+          <Link href={homeHref} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 text-[#08132c]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black leading-none">Beranda</span></Link>
           <Link href={isLoggedIn ? "/user/transaksi" : "/login"} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-black leading-none">Riwayat</span></Link>
           <Link href={isLoggedIn ? "/user/saldo" : "/login"} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-black leading-none">Saldo</span></Link>
           <Link href={accountHref} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-black leading-none">Akun</span></Link>
