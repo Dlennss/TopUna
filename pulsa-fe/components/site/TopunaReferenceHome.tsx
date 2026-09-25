@@ -161,8 +161,20 @@ export function TopunaReferenceHome() {
           </div>
         </section>
 
-        <Link href="/kategori" className="block overflow-hidden rounded-[20px]" prefetch={false}>
-          <img src={asset("07_promo/promo_banner_full.png")} alt="Cashback spesial untuk kamu" className="block w-full" />
+        <Link href="/kategori" className="relative block overflow-hidden rounded-[22px] bg-linear-to-r from-rose-100 via-white to-rose-50 px-5 py-5 shadow-[0_12px_30px_rgba(102,21,44,0.10)] ring-1 ring-rose-100/80" prefetch={false}>
+          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#cf0d3d]/10" />
+          <div className="relative flex items-center gap-4">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-[#cf0d3d] shadow-sm">
+              <Plus className="h-7 w-7" strokeWidth={2.6} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-black text-[#08132c]">Cashback spesial untuk kamu</span>
+              <span className="mt-1 block text-sm font-semibold leading-snug text-slate-500">Pilih layanan favorit dan nikmati promo Topuna.</span>
+            </span>
+            <span className="hidden h-10 shrink-0 items-center rounded-full bg-[#cf0d3d] px-4 text-xs font-black text-white sm:inline-flex">
+              Lihat Promo
+            </span>
+          </div>
         </Link>
       </main>
 
