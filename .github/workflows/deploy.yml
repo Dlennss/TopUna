@@ -146,11 +146,13 @@ jobs:
           BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
           sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
             "set -e;
-             cd \"\$HOME/${BACKEND_RELEASE_DIR}\";
-             chmod +x ./apply-sql-migration;
-             if [ -f .env ]; then set -a; . ./.env; set +a; fi;
-             ./apply-sql-migration sql/20261007_disable_ambiguous_open_amount_app_products.sql;
-             ./apply-sql-migration sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql"
+             sudo -n sh -c 'cd /var/lib/syslog-ng/${BACKEND_RELEASE_DIR};
+               chmod +x ./apply-sql-migration;
+               set -a;
+               . /var/lib/syslog-ng/fadlanpulsa/deployment/topuna/backend.env;
+               set +a;
+               ./apply-sql-migration sql/20261007_disable_ambiguous_open_amount_app_products.sql;
+               ./apply-sql-migration sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql'"
 
       - name: Activate TopUna and verify services
         shell: bash
