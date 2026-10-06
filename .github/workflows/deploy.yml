@@ -83,6 +83,8 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../deploy/backend/apply-sql-migration ./scripts/apply_sql_migration
           mkdir -p ../deploy/backend/sql
           cp sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql ../deploy/backend/sql/
+          cp sql/20261007_disable_ambiguous_open_amount_app_products.sql ../deploy/backend/sql/
+          cp sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql ../deploy/backend/sql/
 
       - name: Build frontend standalone
         env:
@@ -147,7 +149,9 @@ jobs:
              cd \"\$HOME/${BACKEND_RELEASE_DIR}\";
              chmod +x ./apply-sql-migration;
              if [ -f .env ]; then set -a; . ./.env; set +a; fi;
-             ./apply-sql-migration sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql"
+             ./apply-sql-migration sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql;
+             ./apply-sql-migration sql/20261007_disable_ambiguous_open_amount_app_products.sql;
+             ./apply-sql-migration sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql"
 
       - name: Activate TopUna and verify services
         shell: bash

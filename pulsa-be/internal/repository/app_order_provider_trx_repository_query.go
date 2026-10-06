@@ -9,11 +9,11 @@ import (
 func (r *AppOrderProviderTrxRepository) Create(ctx context.Context, in AppOrderProviderTrxCreateInput) error {
 	return r.db.QueryRowContext(ctx, `
 INSERT INTO public.app_order_provider_trx
-  (app_order_id, provider, ref_id, harga_provider, status, kode_respon, pesan, sn, raw_request, raw_callback, dibuat_pada, diubah_pada)
+  (app_order_id, provider, ref_id, kode_provider, harga_provider, status, kode_respon, pesan, sn, raw_request, raw_callback, dibuat_pada, diubah_pada)
 VALUES
-  ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,now(),now())
+  ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb,now(),now())
 RETURNING id
-`, in.AppOrderID, strings.TrimSpace(strings.ToLower(in.Provider)), strings.TrimSpace(in.RefID), in.HargaProvider, strings.TrimSpace(strings.ToLower(in.Status)),
+`, in.AppOrderID, strings.TrimSpace(strings.ToLower(in.Provider)), strings.TrimSpace(in.RefID), strings.TrimSpace(in.KodeProvider), in.HargaProvider, strings.TrimSpace(strings.ToLower(in.Status)),
 		nullableStringValue(in.KodeRespon), nullableStringValue(in.Pesan), nullableStringValue(in.SN), nullableJSON(in.RawRequest), nullableJSON(in.RawCallback)).Scan(&in.ID)
 }
 
@@ -30,7 +30,7 @@ func (r *AppOrderProviderTrxRepository) GetByRefID(ctx context.Context, refID, p
 	)
 	err := r.db.QueryRowContext(ctx, `
 SELECT
-  id, app_order_id, provider, ref_id, harga_provider, status, kode_respon, pesan,
+  id, app_order_id, provider, ref_id, kode_provider, harga_provider, status, kode_respon, pesan,
   sn, raw_request::text, raw_callback::text, dibuat_pada, diubah_pada
 FROM public.app_order_provider_trx
 WHERE TRIM(ref_id) = $1
@@ -42,6 +42,7 @@ LIMIT 1
 		&row.AppOrderID,
 		&row.Provider,
 		&row.RefID,
+		&row.KodeProvider,
 		&row.HargaProvider,
 		&row.Status,
 		&kodeRespon,
@@ -99,7 +100,7 @@ func (r *AppOrderProviderTrxRepository) GetLatestByAppOrderID(ctx context.Contex
 	)
 	err := r.db.QueryRowContext(ctx, `
 SELECT
-  id, app_order_id, provider, ref_id, harga_provider, status, kode_respon, pesan,
+  id, app_order_id, provider, ref_id, kode_provider, harga_provider, status, kode_respon, pesan,
   sn, raw_request::text, raw_callback::text, dibuat_pada, diubah_pada
 FROM public.app_order_provider_trx
 WHERE app_order_id = $1
@@ -110,6 +111,7 @@ LIMIT 1
 		&row.AppOrderID,
 		&row.Provider,
 		&row.RefID,
+		&row.KodeProvider,
 		&row.HargaProvider,
 		&row.Status,
 		&kodeRespon,

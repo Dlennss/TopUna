@@ -106,11 +106,12 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 	reqJSON, _ := json.Marshal(reqPayload)
 
 	createIn := repository.AppOrderProviderTrxCreateInput{
-		AppOrderID: order.ID,
-		Provider:   provider,
-		RefID:      providerRefID,
-		Status:     "pending",
-		RawRequest: string(reqJSON),
+		AppOrderID:   order.ID,
+		Provider:     provider,
+		RefID:        providerRefID,
+		KodeProvider: providerProductCode,
+		Status:       "pending",
+		RawRequest:   string(reqJSON),
 	}
 	if err := s.providerTrxRepo.Create(ctx, createIn); err != nil {
 		return err

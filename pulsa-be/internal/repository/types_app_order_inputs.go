@@ -102,6 +102,7 @@ type AppOrderProviderTrxCreateInput struct {
 	AppOrderID    int64
 	Provider      string
 	RefID         string
+	KodeProvider  string
 	HargaProvider int64
 	Status        string
 	KodeRespon    string

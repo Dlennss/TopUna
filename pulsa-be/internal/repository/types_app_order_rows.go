@@ -103,6 +103,7 @@ type AppOrderProviderTrxRow struct {
 	AppOrderID    int64      `json:"app_order_id"`
 	Provider      string     `json:"provider"`
 	RefID         string     `json:"ref_id"`
+	KodeProvider  string     `json:"kode_provider"`
 	HargaProvider int64      `json:"harga_provider"`
 	Status        string     `json:"status"`
 	KodeRespon    *string    `json:"kode_respon,omitempty"`
