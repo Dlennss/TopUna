@@ -85,6 +85,7 @@ jobs:
           cp sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql ../deploy/backend/sql/
           cp sql/20261007_disable_ambiguous_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql ../deploy/backend/sql/
+          cp sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql ../deploy/backend/sql/
 
       - name: Build frontend standalone
         env:
@@ -163,6 +164,23 @@ jobs:
           SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
           sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
             'sudo -n /usr/local/sbin/topuna-activate'
+
+      - name: Enforce Pulsa24Jam catalog after activation
+        shell: bash
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
+          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
+            "set -e;
+             sudo -n sh -c 'cd /var/lib/syslog-ng/${BACKEND_RELEASE_DIR};
+               chmod +x ./apply-sql-migration;
+               set -a;
+               . /var/lib/syslog-ng/fadlanpulsa/deployment/topuna/backend.env;
+               set +a;
+               ./apply-sql-migration sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql'"
 
       - name: Verify public release
         shell: bash

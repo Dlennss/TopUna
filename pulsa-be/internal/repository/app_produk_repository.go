@@ -143,6 +143,13 @@ LEFT JOIN public.kategori_fee_app kfa_open
 LEFT JOIN public.kategori k ON k.id = p.kategori_id
 LEFT JOIN public.brand b ON b.id = p.brand_id
 WHERE p.aktif = true
+  AND NOT (
+    p.tipe_harga::text = 'OPEN_AMOUNT'
+    AND (
+      UPPER(COALESCE(p.nama, '')) LIKE '%OPEN AMOUNT%'
+      OR UPPER(COALESCE(p.nama, '')) LIKE '%DENOM BEBAS%'
+    )
+  )
   AND ($1 = '' OR p.sku ILIKE '%'||$1||'%' OR p.nama ILIKE '%'||$1||'%')
   AND ($2 <= 0 OR p.kategori_id = $2)
   AND ($3 <= 0 OR p.brand_id = $3)
