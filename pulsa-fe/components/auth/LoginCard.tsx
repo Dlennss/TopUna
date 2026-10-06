@@ -137,10 +137,10 @@ export function LoginCard() {
         return;
       }
 
-      if (!(await persistLoginToken(backendToken))) {
-        setErr("Sesi login belum tersimpan. Silakan coba lagi.");
-        return;
-      }
+      // `/api/auth/login` sudah menyimpan cookie HttpOnly. Endpoint persist
+      // hanya fallback untuk sinkronisasi token, jadi jangan gagalkan login
+      // ketika deploy lama masih menolak validasi ulang token.
+      void persistLoginToken(backendToken);
 
       localStorage.setItem("auth_token", backendToken);
       localStorage.setItem("auth_source", "password");
