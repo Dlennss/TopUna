@@ -31,61 +31,85 @@ SELECT
   p.nominal,
   p.maksimal_nominal,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN p.nominal + app.harga + COALESCE(kfa.fee_master, 0)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN COALESCE(kfa_open.fee_master, COALESCE(kfa.fee_master, 0))
     ELSE COALESCE(kfa.fee_master, 0)
   END AS fee_master,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN p.nominal + app.harga + COALESCE(kfa.fee_agent, 0)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN COALESCE(kfa_open.fee_agent, COALESCE(kfa.fee_agent, 0))
     ELSE COALESCE(kfa.fee_agent, 0)
   END AS fee_agent,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN p.nominal + app.harga + COALESCE(kfa.fee_user, 0)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN COALESCE(kfa_open.fee_user, COALESCE(kfa.fee_user, 0))
     ELSE COALESCE(kfa.fee_user, 0)
   END AS fee_user,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN p.nominal + app.harga + COALESCE(kfa.fee_non_user, 0)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN COALESCE(kfa_open.fee_non_user, COALESCE(kfa.fee_non_user, 0))
     ELSE COALESCE(kfa.fee_non_user, 0)
   END AS fee_guest,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN ((p.nominal + app.harga + COALESCE(kfa.fee_master, 0)) * 7 + 999) / 1000
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN app.harga + COALESCE(kfa_open.fee_master, COALESCE(kfa.fee_master, 0))
     ELSE app.harga + COALESCE(kfa.fee_master, 0)
   END AS harga_master_final,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN ((p.nominal + app.harga + COALESCE(kfa.fee_agent, 0)) * 7 + 999) / 1000
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN app.harga + COALESCE(kfa_open.fee_agent, COALESCE(kfa.fee_agent, 0))
     ELSE app.harga + COALESCE(kfa.fee_agent, 0)
   END AS harga_agent_final,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN ((p.nominal + app.harga + COALESCE(kfa.fee_user, 0)) * 7 + 999) / 1000
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN app.harga + COALESCE(kfa_open.fee_user, COALESCE(kfa.fee_user, 0))
     ELSE app.harga + COALESCE(kfa.fee_user, 0)
   END AS harga_user_final,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN ((p.nominal + app.harga + COALESCE(kfa.fee_non_user, 0)) * 7 + 999) / 1000
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN app.harga + COALESCE(kfa_open.fee_non_user, COALESCE(kfa.fee_non_user, 0))
     ELSE app.harga + COALESCE(kfa.fee_non_user, 0)
   END AS harga_guest_final,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN (p.nominal + app.harga + COALESCE(kfa.fee_master, 0)) + (((p.nominal + app.harga + COALESCE(kfa.fee_master, 0)) * 7 + 999) / 1000)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN ((app.harga + COALESCE(kfa_open.fee_master, COALESCE(kfa.fee_master, 0))) * 7 + 999) / 1000
     ELSE ((app.harga + COALESCE(kfa.fee_master, 0)) * 7 + 999) / 1000
   END AS payment_fee_master,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN (p.nominal + app.harga + COALESCE(kfa.fee_agent, 0)) + (((p.nominal + app.harga + COALESCE(kfa.fee_agent, 0)) * 7 + 999) / 1000)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN ((app.harga + COALESCE(kfa_open.fee_agent, COALESCE(kfa.fee_agent, 0))) * 7 + 999) / 1000
     ELSE ((app.harga + COALESCE(kfa.fee_agent, 0)) * 7 + 999) / 1000
   END AS payment_fee_agent,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN (p.nominal + app.harga + COALESCE(kfa.fee_user, 0)) + (((p.nominal + app.harga + COALESCE(kfa.fee_user, 0)) * 7 + 999) / 1000)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN ((app.harga + COALESCE(kfa_open.fee_user, COALESCE(kfa.fee_user, 0))) * 7 + 999) / 1000
     ELSE ((app.harga + COALESCE(kfa.fee_user, 0)) * 7 + 999) / 1000
   END AS payment_fee_user,
   CASE
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based AND COALESCE(app.harga, 0) <= 0 THEN 0
+    WHEN p.tipe_harga::text = 'FIXED' AND p.nominal IS NOT NULL AND app_fee_based.is_fee_based THEN (p.nominal + app.harga + COALESCE(kfa.fee_non_user, 0)) + (((p.nominal + app.harga + COALESCE(kfa.fee_non_user, 0)) * 7 + 999) / 1000)
     WHEN p.tipe_harga::text = 'FIXED' AND COALESCE(app.harga, 0) <= 0 THEN 0
     WHEN p.tipe_harga::text = 'OPEN_AMOUNT' THEN ((app.harga + COALESCE(kfa_open.fee_non_user, COALESCE(kfa.fee_non_user, 0))) * 7 + 999) / 1000
     ELSE ((app.harga + COALESCE(kfa.fee_non_user, 0)) * 7 + 999) / 1000
@@ -142,6 +166,12 @@ LEFT JOIN public.kategori_fee_app kfa_open
  AND kfa_open.aktif = true
 LEFT JOIN public.kategori k ON k.id = p.kategori_id
 LEFT JOIN public.brand b ON b.id = p.brand_id
+CROSS JOIN LATERAL (
+  SELECT (
+    UPPER(COALESCE(k.nama, '')) LIKE '%E-WALLET%'
+    OR UPPER(COALESCE(k.nama, '')) LIKE '%E-MONEY%'
+  ) AS is_fee_based
+) app_fee_based
 WHERE p.aktif = true
   AND NOT (
     p.tipe_harga::text = 'OPEN_AMOUNT'

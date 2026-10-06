@@ -94,6 +94,7 @@ func (s *AppOrderService) Create(ctx context.Context, in repository.AppOrderCrea
 		}
 	}
 	isCheckProduct := isAppCheckProduct(produk)
+	isFeeBasedFixedProduct := isAppFeeBasedFixedProduct(produk, pricingRow)
 	billingAmount, err := s.resolveBillingAmountFromSourceCheck(ctx, produk, buyerType, memberID, in)
 	if err != nil {
 		return nil, err
@@ -159,6 +160,8 @@ func (s *AppOrderService) Create(ctx context.Context, in repository.AppOrderCrea
 	hargaDasarFinal := hargaDasar
 	if isCheckProduct {
 		hargaDasarFinal = 0
+	} else if billingAmount <= 0 && isFeeBasedFixedProduct {
+		hargaDasarFinal = nominal + hargaDasar
 	}
 	if strings.ToUpper(strings.TrimSpace(produk.TipeHarga)) == "OPEN_AMOUNT" {
 		hargaDasarFinal = nominal + hargaDasar

@@ -133,7 +133,7 @@ function UserProductCard({
 
           <div className="space-y-2">
             <div>
-              <p className="line-clamp-1 text-[11px] font-bold text-slate-500">Top up {brandLabel}</p>
+              <p className="line-clamp-2 min-h-8 text-[11px] font-bold leading-4 text-slate-500">{displayName || `Top up ${brandLabel}`}</p>
               <p className="text-sm font-black text-[#651e34]">
                 {canBuy ? formatRupiah(finalPrice) : (buyBlockedLabel || "Lengkapi dulu")}
               </p>

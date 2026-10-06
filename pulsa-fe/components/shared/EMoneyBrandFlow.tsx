@@ -60,11 +60,6 @@ function extractNominalSortValue(item: UserProductItem) {
 }
 
 function classifyEMoneySubcategory(item: UserProductItem) {
-  const backendGroup = String(item.group_name || "").trim();
-  if (backendGroup) {
-    return backendGroup;
-  }
-
   const upper = String(item.nama || "").toUpperCase();
 
   if (item.tipe_harga === "OPEN_AMOUNT" || upper.includes("BEBAS NOMINAL")) {
@@ -87,6 +82,10 @@ function classifyEMoneySubcategory(item: UserProductItem) {
   }
   if (upper.includes("ADMIN")) {
     return "ADMIN";
+  }
+  const backendGroup = String(item.group_name || "").trim();
+  if (backendGroup && !["PULSA", "PPOB", "EWALLET", "E-WALLET"].includes(backendGroup.toUpperCase())) {
+    return backendGroup;
   }
   return "REGULER";
 }

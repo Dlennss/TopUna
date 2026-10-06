@@ -169,6 +169,9 @@ func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int
 		if isCheckProduct {
 			return 0, 1, nil
 		}
+		if produk.Nominal != nil && *produk.Nominal > 0 {
+			return *produk.Nominal, 1, nil
+		}
 		if hargaDasar <= 0 {
 			return 0, 0, fmt.Errorf("harga dasar produk FIXED belum valid")
 		}
@@ -184,6 +187,17 @@ func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int
 	default:
 		return 0, 0, fmt.Errorf("tipe_harga produk tidak didukung")
 	}
+}
+
+func isAppFeeBasedFixedProduct(produk *repository.ProdukRow, pricing *repository.ProdukAppPricingRow) bool {
+	if produk == nil || pricing == nil || produk.Nominal == nil || *produk.Nominal <= 0 {
+		return false
+	}
+	if !strings.EqualFold(strings.TrimSpace(produk.TipeHarga), "FIXED") {
+		return false
+	}
+	category := strings.ToUpper(strings.TrimSpace(pricing.KategoriNama))
+	return strings.Contains(category, "E-WALLET") || strings.Contains(category, "E-MONEY")
 }
 
 func isAppCheckProduct(produk *repository.ProdukRow) bool {
