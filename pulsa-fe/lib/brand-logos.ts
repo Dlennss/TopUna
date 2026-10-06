@@ -1,3 +1,5 @@
+import generatedBrandMap from "@/lib/generated-yuscom-display-brand-map.json";
+
 export type BrandLogoMeta = {
   src: string;
   alt: string;
@@ -390,5 +392,26 @@ function normalizeBrandName(name: string) {
 export function getBrandLogo(name: string): BrandLogoMeta | null {
   const key = normalizeBrandName(name);
   const withoutBankPrefix = key.replace(/^bank\s+/, "");
-  return BRAND_LOGOS[key] ?? BRAND_LOGOS[withoutBankPrefix] ?? null;
+  const matched = BRAND_LOGOS[key] ?? BRAND_LOGOS[withoutBankPrefix];
+  if (matched) return matched;
+
+  const generatedMap = generatedBrandMap as Record<string, string>;
+  let generated = generatedMap[name] ?? generatedMap[name.trim()];
+  if (!generated) {
+    for (const [brandName, fileName] of Object.entries(generatedMap)) {
+      if (normalizeBrandName(brandName) === key || normalizeBrandName(brandName) === withoutBankPrefix) {
+        generated = fileName;
+        break;
+      }
+    }
+  }
+  if (generated) {
+    return {
+      src: `/yuscom-display-brand-logos-generated/${generated}`,
+      alt: `Logo ${name}`,
+      sourcePage: "generated-local-brand-mark",
+    };
+  }
+
+  return null;
 }
