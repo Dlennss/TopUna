@@ -21,7 +21,6 @@ type Pulsa24JamCatalogItem struct {
 	Price          int64
 	Nominal        *int64
 	MaximumNominal *int64
-	HiddenFromApp  bool
 }
 
 type Pulsa24JamCatalogSyncResult struct {
@@ -87,11 +86,10 @@ ON CONFLICT (kategori_id) DO NOTHING
 		}
 
 		var productID int64
-		productActive := !item.HiddenFromApp
 		err = tx.QueryRowContext(ctx, `
 INSERT INTO public.produk
   (sku, nama, group_name, kategori_id, brand_id, tipe_harga, nominal, maksimal_nominal, jam_buka, jam_tutup, aktif, dibuat_pada, diubah_pada)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'00:00','23:59',$9,now(),now())
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'00:00','23:59',true,now(),now())
 ON CONFLICT (sku) DO UPDATE SET
   nama = EXCLUDED.nama,
   group_name = EXCLUDED.group_name,
@@ -100,10 +98,10 @@ ON CONFLICT (sku) DO UPDATE SET
   tipe_harga = EXCLUDED.tipe_harga,
   nominal = EXCLUDED.nominal,
   maksimal_nominal = EXCLUDED.maksimal_nominal,
-  aktif = EXCLUDED.aktif,
+  aktif = true,
   diubah_pada = now()
 RETURNING id
-`, item.SKU, item.Name, item.GroupName, categoryID, brandID, item.PriceType, item.Nominal, item.MaximumNominal, productActive).Scan(&productID)
+`, item.SKU, item.Name, item.GroupName, categoryID, brandID, item.PriceType, item.Nominal, item.MaximumNominal).Scan(&productID)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +110,7 @@ RETURNING id
 		if err := tx.QueryRowContext(ctx, `
 INSERT INTO public.produk_app_pricing
   (produk_id, provider, harga, harga_dasar, yuscom_group, yuscom_category, yuscom_sku, yuscom_name, yuscom_status, yuscom_display_brand, aktif, fetched_at, created_at, updated_at, dibuat_pada, diubah_pada)
-VALUES ($1,'pulsa24jam',$2,$2,$3,$4,$5,$6,'ACTIVE',$7,$8,now(),now(),now(),now(),now())
+VALUES ($1,'pulsa24jam',$2,$2,$3,$4,$5,$6,'ACTIVE',$7,true,now(),now(),now(),now(),now())
 ON CONFLICT (produk_id) DO UPDATE SET
   provider = 'pulsa24jam',
   harga = EXCLUDED.harga,
@@ -123,12 +121,12 @@ ON CONFLICT (produk_id) DO UPDATE SET
   yuscom_name = EXCLUDED.yuscom_name,
   yuscom_status = 'ACTIVE',
   yuscom_display_brand = EXCLUDED.yuscom_display_brand,
-  aktif = EXCLUDED.aktif,
+  aktif = true,
   fetched_at = now(),
   updated_at = now(),
   diubah_pada = now()
 RETURNING aktif
-`, productID, item.Price, item.GroupName, item.CategoryName, item.SKU, item.Name, item.BrandName, productActive).Scan(&catalogActive); err != nil {
+`, productID, item.Price, item.GroupName, item.CategoryName, item.SKU, item.Name, item.BrandName).Scan(&catalogActive); err != nil {
 			return nil, err
 		}
 
@@ -178,12 +176,6 @@ func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalo
 	if item.PriceType != "OPEN_AMOUNT" {
 		item.PriceType = "FIXED"
 	}
-	if isAmbiguousPulsa24JamOpenAmountName(item.Name) {
-		item.HiddenFromApp = true
-		item.PriceType = "OPEN_AMOUNT"
-		item.Nominal = nil
-		return item
-	}
 	if item.PriceType == "OPEN_AMOUNT" {
 		if nominal, ok := parsePulsa24JamTrailingNominal(item.Name); ok {
 			item.PriceType = "FIXED"
@@ -192,11 +184,6 @@ func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalo
 		}
 	}
 	return item
-}
-
-func isAmbiguousPulsa24JamOpenAmountName(name string) bool {
-	upper := strings.ToUpper(strings.TrimSpace(name))
-	return strings.Contains(upper, "OPEN AMOUNT") || strings.Contains(upper, "DENOM BEBAS")
 }
 
 func parsePulsa24JamTrailingNominal(name string) (int64, bool) {

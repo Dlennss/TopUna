@@ -138,13 +138,6 @@ CROSS JOIN LATERAL (
     CASE WHEN subtotal_calc.guest > 0 THEN ((subtotal_calc.guest * 7 + 999) / 1000) ELSE 0 END AS guest
 ) payment_calc
 WHERE p.aktif = true
-  AND NOT (
-    p.tipe_harga::text = 'OPEN_AMOUNT'
-    AND (
-      UPPER(COALESCE(p.nama, '')) LIKE '%OPEN AMOUNT%'
-      OR UPPER(COALESCE(p.nama, '')) LIKE '%DENOM BEBAS%'
-    )
-  )
   AND ($1 = '' OR p.sku ILIKE '%'||$1||'%' OR p.nama ILIKE '%'||$1||'%')
   AND ($2 <= 0 OR p.kategori_id = $2)
   AND ($3 <= 0 OR p.brand_id = $3)
