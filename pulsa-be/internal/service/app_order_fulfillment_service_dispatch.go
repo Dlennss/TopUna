@@ -178,11 +178,11 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 
 	if appOrderProviderImmediateReject(provider, body) {
 		msg := strings.TrimSpace(body)
-		if appOrderProviderProductUnavailable(provider, body) {
+		if appOrderProviderShouldQuarantineAppProduct(provider, body) {
 			if markErr := s.pricingRepo.MarkProviderProductUnavailable(ctx, order.ProdukID, provider); markErr != nil {
 				helper.AppendProviderServiceLog("provider_callback_service.log", "mark product unavailable failed provider=%s product_id=%d sku=%s err=%v", provider, order.ProdukID, order.ProdukSKUSnapshot, markErr)
 			} else {
-				helper.AppendProviderServiceLog("provider_callback_service.log", "product unavailable provider=%s product_id=%d sku=%s until=verified", provider, order.ProdukID, order.ProdukSKUSnapshot)
+				helper.AppendProviderServiceLog("provider_callback_service.log", "product quarantined after app reject provider=%s product_id=%d sku=%s until=verified", provider, order.ProdukID, order.ProdukSKUSnapshot)
 			}
 		}
 		harga := price

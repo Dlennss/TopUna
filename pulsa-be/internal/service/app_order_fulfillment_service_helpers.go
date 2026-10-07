@@ -98,6 +98,30 @@ func appOrderProviderProductUnavailable(provider, body string) bool {
 		strings.Contains(upper, "PRODUCT OUT OF STOCK")
 }
 
+func appOrderProviderShouldQuarantineAppProduct(provider, body string) bool {
+	if !strings.EqualFold(strings.TrimSpace(provider), providerpkg.Pulsa24JamProviderName) {
+		return false
+	}
+	if !appOrderProviderImmediateReject(provider, body) {
+		return false
+	}
+	upper := strings.ToUpper(strings.TrimSpace(body))
+	destinationFailures := []string{
+		"NOMOR TUJUAN SALAH",
+		"NOMOR TIDAK VALID",
+		"NOMOR SALAH",
+		"TUJUAN SALAH",
+		"TUJUAN TIDAK VALID",
+		"DESTINATION",
+	}
+	for _, pattern := range destinationFailures {
+		if strings.Contains(upper, pattern) {
+			return false
+		}
+	}
+	return true
+}
+
 func resolvePulsa24JamAppRequest(providerProductCode string, order *repository.AppOrderRow) (string, int64) {
 	providerProductCode = strings.ToUpper(strings.TrimSpace(providerProductCode))
 	if order == nil {

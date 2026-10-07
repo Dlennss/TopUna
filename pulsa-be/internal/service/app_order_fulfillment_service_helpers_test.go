@@ -63,6 +63,18 @@ func TestAppOrderProviderProductUnavailable(t *testing.T) {
 	}
 }
 
+func TestAppOrderProviderShouldQuarantineAppProduct(t *testing.T) {
+	if !appOrderProviderShouldQuarantineAppProduct("pulsa24jam", `{"message":"Transaksi gagal","status":3}`) {
+		t.Fatal("generic Pulsa24Jam app failure should quarantine the product")
+	}
+	if appOrderProviderShouldQuarantineAppProduct("pulsa24jam", `{"message":"Nomor tujuan salah","status":3}`) {
+		t.Fatal("destination-specific failure should not quarantine the product")
+	}
+	if appOrderProviderShouldQuarantineAppProduct("yuscom", `{"message":"Transaksi gagal","status":3}`) {
+		t.Fatal("only Pulsa24Jam app products should be quarantined")
+	}
+}
+
 func TestResolvePulsa24JamAppRequest(t *testing.T) {
 	tests := []struct {
 		name        string

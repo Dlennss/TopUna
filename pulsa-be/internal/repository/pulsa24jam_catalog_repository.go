@@ -120,9 +120,16 @@ ON CONFLICT (produk_id) DO UPDATE SET
   yuscom_category = EXCLUDED.yuscom_category,
   yuscom_sku = EXCLUDED.yuscom_sku,
   yuscom_name = EXCLUDED.yuscom_name,
-  yuscom_status = 'ACTIVE',
+  yuscom_status = CASE
+    WHEN public.produk_app_pricing.yuscom_status LIKE 'PULSA24JAM_%'
+      THEN public.produk_app_pricing.yuscom_status
+    ELSE 'ACTIVE'
+  END,
   yuscom_display_brand = EXCLUDED.yuscom_display_brand,
-  aktif = true,
+  aktif = CASE
+    WHEN public.produk_app_pricing.yuscom_status LIKE 'PULSA24JAM_%' THEN false
+    ELSE true
+  END,
   fetched_at = now(),
   updated_at = now(),
   diubah_pada = now()
