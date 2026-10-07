@@ -138,6 +138,7 @@ CROSS JOIN LATERAL (
     CASE WHEN subtotal_calc.guest > 0 THEN ((subtotal_calc.guest * 7 + 999) / 1000) ELSE 0 END AS guest
 ) payment_calc
 WHERE p.aktif = true
+  AND subtotal_calc.user_price > 1000
   AND ($1 = '' OR p.sku ILIKE '%'||$1||'%' OR p.nama ILIKE '%'||$1||'%')
   AND ($2 <= 0 OR p.kategori_id = $2)
   AND ($3 <= 0 OR p.brand_id = $3)
