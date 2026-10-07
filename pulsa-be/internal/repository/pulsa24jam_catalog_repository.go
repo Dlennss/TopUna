@@ -11,6 +11,7 @@ import (
 
 var pulsa24JamNominalBeforeParenPattern = regexp.MustCompile(`([0-9][0-9.]*)\s*\(`)
 var pulsa24JamTrailingNominalPattern = regexp.MustCompile(`([0-9][0-9.]*)$`)
+var pulsa24JamNominalTokenPattern = regexp.MustCompile(`([0-9][0-9.]*)`)
 
 type Pulsa24JamCatalogItem struct {
 	SKU            string
@@ -206,10 +207,27 @@ func normalizePulsa24JamH2HRProductName(name string) string {
 
 func parsePulsa24JamFixedNominal(name string) (int64, bool) {
 	name = strings.TrimSpace(name)
+	upperName := strings.ToUpper(name)
+	if strings.Contains(upperName, "OPEN AMOUNT") || strings.Contains(upperName, "DENOM BEBAS") {
+		return 0, false
+	}
 	for _, pattern := range []*regexp.Regexp{pulsa24JamNominalBeforeParenPattern, pulsa24JamTrailingNominalPattern} {
 		if nominal, ok := parsePulsa24JamNominalWithPattern(name, pattern); ok {
 			return nominal, true
 		}
+	}
+	var best int64
+	for _, match := range pulsa24JamNominalTokenPattern.FindAllStringSubmatch(name, -1) {
+		if len(match) != 2 || !strings.Contains(match[1], ".") {
+			continue
+		}
+		nominal, err := strconv.ParseInt(strings.ReplaceAll(match[1], ".", ""), 10, 64)
+		if err == nil && nominal > best {
+			best = nominal
+		}
+	}
+	if best > 0 {
+		return best, true
 	}
 	return 0, false
 }

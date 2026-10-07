@@ -89,6 +89,7 @@ jobs:
           cp sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v2.sql ../deploy/backend/sql/
           cp sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v3.sql ../deploy/backend/sql/
           cp sql/20261007_quarantine_failed_pulsa24jam_app_products.sql ../deploy/backend/sql/
+          cp sql/20261007_fix_pulsa24jam_dana_fixed_nominal_products.sql ../deploy/backend/sql/
           cp sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql ../deploy/backend/sql/
           cp sql/20261007_restore_pulsa24jam_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql ../deploy/backend/sql/
@@ -165,7 +166,8 @@ jobs:
                ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v3.sql;
                ./apply-sql-migration sql/20261007_restore_pulsa24jam_open_amount_app_products.sql;
                ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql;
-               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql'"
+               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql;
+               ./apply-sql-migration sql/20261007_fix_pulsa24jam_dana_fixed_nominal_products.sql'"
 
       - name: Activate TopUna and verify services
         shell: bash
@@ -198,7 +200,8 @@ jobs:
                ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v2.sql;
                ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v3.sql;
                ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql;
-               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql'"
+               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql;
+               ./apply-sql-migration sql/20261007_fix_pulsa24jam_dana_fixed_nominal_products.sql'"
 
       - name: Verify public release
         shell: bash
