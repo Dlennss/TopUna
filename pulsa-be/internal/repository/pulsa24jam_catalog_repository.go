@@ -159,7 +159,7 @@ ON CONFLICT (produk_id, provider, kode_provider) DO UPDATE SET
 
 func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalogItem {
 	item.SKU = strings.ToUpper(strings.TrimSpace(item.SKU))
-	item.Name = strings.TrimSpace(item.Name)
+	item.Name = normalizePulsa24JamH2HRProductName(item.Name)
 	item.GroupName = strings.TrimSpace(item.GroupName)
 	item.CategoryName = strings.TrimSpace(item.CategoryName)
 	item.BrandName = strings.TrimSpace(item.BrandName)
@@ -184,6 +184,16 @@ func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalo
 		}
 	}
 	return item
+}
+
+func normalizePulsa24JamH2HRProductName(name string) string {
+	words := strings.Fields(strings.TrimSpace(name))
+	for i, word := range words {
+		if strings.EqualFold(word, "H2H") {
+			words[i] = "H2HR"
+		}
+	}
+	return strings.Join(words, " ")
 }
 
 func parsePulsa24JamTrailingNominal(name string) (int64, bool) {
