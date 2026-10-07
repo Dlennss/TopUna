@@ -60,6 +60,7 @@ func (a *Pulsa24JamAdapter) Name() string { return Pulsa24JamProviderName }
 
 type pulsa24JamPayRequest struct {
 	Commands string `json:"commands"`
+	MemberID string `json:"memberid,omitempty"`
 	Product  string `json:"product,omitempty"`
 	Dest     string `json:"dest,omitempty"`
 	Qty      int64  `json:"qty,omitempty"`
@@ -179,6 +180,7 @@ func (a *Pulsa24JamAdapter) Products(ctx context.Context, product string) ([]Pul
 	}
 	payload := pulsa24JamPayRequest{
 		Commands: "PRODUK",
+		MemberID: a.MemberID,
 		Product:  strings.TrimSpace(product),
 		PIN:      a.PIN,
 	}
@@ -312,6 +314,7 @@ func (a *Pulsa24JamAdapter) Pay(ctx context.Context, req PayRequest) (*PayRespon
 	}
 	payload := pulsa24JamPayRequest{
 		Commands: command,
+		MemberID: a.MemberID,
 		Product:  strings.TrimSpace(req.Product),
 		Dest:     strings.TrimSpace(req.Dest),
 		Qty:      req.Qty,
@@ -399,6 +402,7 @@ func (a *Pulsa24JamAdapter) depositQRIS(ctx context.Context, command, refID stri
 	}
 	payload := pulsa24JamPayRequest{
 		Commands: strings.ToUpper(strings.TrimSpace(command)),
+		MemberID: a.MemberID,
 		Qty:      amount,
 		RefID:    refID,
 		PIN:      a.PIN,
@@ -469,6 +473,7 @@ func firstNonEmpty(values ...string) string {
 func redactPulsa24JamPayload(payload pulsa24JamPayRequest) map[string]any {
 	out := map[string]any{
 		"commands": payload.Commands,
+		"memberid": payload.MemberID,
 		"product":  payload.Product,
 		"dest":     payload.Dest,
 		"qty":      payload.Qty,

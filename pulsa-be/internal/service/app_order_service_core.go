@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -161,6 +163,9 @@ func normalizeBuyer(buyerType string, memberID *int64) (string, *int64, error) {
 }
 
 func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int64, isCheckProduct bool) (nominal int64, qtyFinal int64, err error) {
+	if nominal, ok := pulsa24JamLockedGopayNominal(produk); ok {
+		return nominal, 1, nil
+	}
 	switch strings.ToUpper(strings.TrimSpace(produk.TipeHarga)) {
 	case "FIXED":
 		if qty != 1 {
@@ -190,14 +195,57 @@ func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int
 }
 
 func isAppFeeBasedFixedProduct(produk *repository.ProdukRow, pricing *repository.ProdukAppPricingRow) bool {
-	if produk == nil || pricing == nil || produk.Nominal == nil || *produk.Nominal <= 0 {
+	if produk == nil || pricing == nil {
 		return false
 	}
+	if produk.Nominal == nil || *produk.Nominal <= 0 {
+		if nominal, ok := pulsa24JamLockedGopayNominal(produk); !ok || nominal <= 0 {
+			return false
+		}
+	}
 	if !strings.EqualFold(strings.TrimSpace(produk.TipeHarga), "FIXED") {
-		return false
+		if _, ok := pulsa24JamLockedGopayNominal(produk); !ok {
+			return false
+		}
 	}
 	category := strings.ToUpper(strings.TrimSpace(pricing.KategoriNama))
 	return strings.Contains(category, "E-WALLET") || strings.Contains(category, "E-MONEY")
+}
+
+var appPulsa24JamGopayNominalPattern = regexp.MustCompile(`([0-9][0-9.]*)\s*(?:\(|$)`)
+var appPulsa24JamGopaySKUSuffixPattern = regexp.MustCompile(`([0-9]+)P?$`)
+
+func pulsa24JamLockedGopayNominal(produk *repository.ProdukRow) (int64, bool) {
+	if produk == nil {
+		return 0, false
+	}
+	sku := strings.ToUpper(strings.TrimSpace(produk.SKU))
+	name := strings.ToUpper(strings.TrimSpace(produk.Nama))
+	if !strings.Contains(name, "GOPAY") {
+		return 0, false
+	}
+	if strings.Contains(name, "OPEN AMOUNT") || strings.Contains(name, "DENOM BEBAS") {
+		return 0, false
+	}
+	if !(strings.HasPrefix(sku, "GPC") || strings.HasPrefix(sku, "GPCH") || strings.HasPrefix(sku, "GD")) {
+		return 0, false
+	}
+	if produk.Nominal != nil && *produk.Nominal > 0 {
+		return *produk.Nominal, true
+	}
+	if match := appPulsa24JamGopayNominalPattern.FindStringSubmatch(name); len(match) == 2 {
+		nominal, err := strconv.ParseInt(strings.ReplaceAll(match[1], ".", ""), 10, 64)
+		if err == nil && nominal > 0 {
+			return nominal, true
+		}
+	}
+	if match := appPulsa24JamGopaySKUSuffixPattern.FindStringSubmatch(sku); len(match) == 2 {
+		thousands, err := strconv.ParseInt(match[1], 10, 64)
+		if err == nil && thousands > 0 {
+			return thousands * 1000, true
+		}
+	}
+	return 0, false
 }
 
 func isAppCheckProduct(produk *repository.ProdukRow) bool {

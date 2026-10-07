@@ -128,3 +128,30 @@ func TestPulsa24JamAppOrderRefIDFallbackFitsH2HRLimit(t *testing.T) {
 		t.Fatalf("refid = %q, want PKA prefix", got)
 	}
 }
+
+func TestPulsa24JamLockedGopayNominal(t *testing.T) {
+	tests := []struct {
+		name string
+		row  repository.ProdukRow
+		want int64
+	}{
+		{
+			name: "h2hr label does not parse the 2",
+			row:  repository.ProdukRow{SKU: "GPC100", Nama: "SALDO GOPAY CUSTOMER H2HR 100.000"},
+			want: 100000,
+		},
+		{
+			name: "adm variant parses product nominal before adm fee",
+			row:  repository.ProdukRow{SKU: "GPCAD1000", Nama: "GOPAY CUSTOMER 1000.000 (ADM:1000)"},
+			want: 1000000,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := pulsa24JamLockedGopayNominal(&tt.row)
+			if !ok || got != tt.want {
+				t.Fatalf("got nominal=%d ok=%v, want nominal=%d ok=true", got, ok, tt.want)
+			}
+		})
+	}
+}
