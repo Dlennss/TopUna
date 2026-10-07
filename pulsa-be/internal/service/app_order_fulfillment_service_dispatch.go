@@ -71,15 +71,18 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 		return fmt.Errorf("%s", msg)
 	}
 
-	var nominalForMap int64
-	if order.Nominal > 0 {
-		nominalForMap = order.Nominal
-	}
-	providerProductCode, err := s.callbackRepo.ResolveProviderProductCodeByNominal(ctx, provider, order.ProdukSKUSnapshot, nominalForMap)
-	if err != nil {
-		msg := fmt.Sprintf("gagal resolve kode provider %s untuk %s", provider, order.InvoiceID)
-		_ = s.handleFailedOrder(ctx, order, 0, msg, "gagal dispatch provider")
-		return err
+	providerProductCode := strings.ToUpper(strings.TrimSpace(pricingRow.YuscomSKU))
+	if providerProductCode == "" {
+		var nominalForMap int64
+		if order.Nominal > 0 {
+			nominalForMap = order.Nominal
+		}
+		providerProductCode, err = s.callbackRepo.ResolveProviderProductCodeByNominal(ctx, provider, order.ProdukSKUSnapshot, nominalForMap)
+		if err != nil {
+			msg := fmt.Sprintf("gagal resolve kode provider %s untuk %s", provider, order.InvoiceID)
+			_ = s.handleFailedOrder(ctx, order, 0, msg, "gagal dispatch provider")
+			return err
+		}
 	}
 	if strings.TrimSpace(providerProductCode) == "" {
 		msg := fmt.Sprintf("kode produk provider %s tidak valid untuk %s", provider, order.InvoiceID)
