@@ -23,6 +23,7 @@ type EMoneyBucket = {
 };
 
 const SUBCATEGORY_PRIORITY = [
+  "BEBAS NOMINAL",
   "NON ADMIN DIRECT",
   "NON ADMIN",
   "DIRECT",
@@ -31,7 +32,6 @@ const SUBCATEGORY_PRIORITY = [
   "PROMO",
   "ADMIN",
   "LAINNYA",
-  "BEBAS NOMINAL",
 ] as const;
 
 function formatBucketLabel(key: string) {
@@ -91,12 +91,6 @@ function classifyEMoneySubcategory(item: UserProductItem) {
 }
 
 function sortBuckets(a: EMoneyBucket, b: EMoneyBucket) {
-  const aIsOpenAmount = a.key.toUpperCase().includes("BEBAS NOMINAL");
-  const bIsOpenAmount = b.key.toUpperCase().includes("BEBAS NOMINAL");
-  if (aIsOpenAmount !== bIsOpenAmount) {
-    return aIsOpenAmount ? 1 : -1;
-  }
-
   const aIndex = SUBCATEGORY_PRIORITY.indexOf(a.key as (typeof SUBCATEGORY_PRIORITY)[number]);
   const bIndex = SUBCATEGORY_PRIORITY.indexOf(b.key as (typeof SUBCATEGORY_PRIORITY)[number]);
   const aRank = aIndex === -1 ? SUBCATEGORY_PRIORITY.length : aIndex;
@@ -133,7 +127,7 @@ function buildBuckets(items: UserProductItem[]) {
 export function EMoneyBrandFlow({ items, isLoggedIn, authToken, buyerRole, initialDest = "" }: EMoneyBrandFlowProps) {
   const buckets = React.useMemo(() => buildBuckets(items), [items]);
   const defaultBucketKey = React.useMemo(
-    () => buckets.find((bucket) => bucket.key !== "BEBAS NOMINAL")?.key ?? buckets[0]?.key ?? "",
+    () => buckets.find((bucket) => bucket.key === "BEBAS NOMINAL")?.key ?? buckets[0]?.key ?? "",
     [buckets],
   );
   const [selectedKey, setSelectedKey] = React.useState<string>(defaultBucketKey);
