@@ -86,6 +86,11 @@ func TestResolvePulsa24JamAppRequest(t *testing.T) {
 			wantProduct: "UDGD15", wantQty: 1,
 		},
 		{
+			name:        "pulsa24jam gopay customer nominal sku sends nominal qty",
+			order:       repository.AppOrderRow{ProdukSKUSnapshot: "GPC100", ProdukNamaSnapshot: "Saldo Gopay Customer H2HR 100.000", Qty: 1, Nominal: 100000, HargaDasar: 101200},
+			wantProduct: "GPC100", wantQty: 100000,
+		},
+		{
 			name:        "open amount remains unchanged",
 			order:       repository.AppOrderRow{ProdukSKUSnapshot: "DANA", ProdukNamaSnapshot: "Dana Bebas Nominal", Qty: 25000, HargaDasar: 26000},
 			wantProduct: "DANA", wantQty: 25000,

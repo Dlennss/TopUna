@@ -120,6 +120,9 @@ func resolvePulsa24JamAppRequest(providerProductCode string, order *repository.A
 	case (strings.HasPrefix(sku, "UDGP") || strings.HasPrefix(sku, "UDGY")) && strings.Contains(name, "GOPAY") && !strings.Contains(name, "DRIVER"):
 		genericCode = "GOPAY"
 	default:
+		if pulsa24JamGopayNominalSKURequiresAmountQty(sku, name) && order.Nominal > 0 {
+			return providerProductCode, order.Nominal
+		}
 		return providerProductCode, qty
 	}
 
@@ -136,6 +139,20 @@ func resolvePulsa24JamAppRequest(providerProductCode string, order *repository.A
 		return providerProductCode, qty
 	}
 	return genericCode, amount
+}
+
+func pulsa24JamGopayNominalSKURequiresAmountQty(sku, name string) bool {
+	sku = strings.ToUpper(strings.TrimSpace(sku))
+	name = strings.ToUpper(strings.TrimSpace(name))
+	if !strings.Contains(name, "GOPAY") {
+		return false
+	}
+	if strings.Contains(name, "OPEN AMOUNT") || strings.Contains(name, "DENOM BEBAS") {
+		return false
+	}
+	return strings.HasPrefix(sku, "GPC") ||
+		strings.HasPrefix(sku, "GPCH") ||
+		strings.HasPrefix(sku, "GD")
 }
 
 func pulsa24JamAppOrderRefID(order *repository.AppOrderRow) string {

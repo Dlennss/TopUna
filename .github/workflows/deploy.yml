@@ -85,6 +85,7 @@ jobs:
           cp sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql ../deploy/backend/sql/
           cp sql/20261007_disable_ambiguous_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql ../deploy/backend/sql/
+          cp sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch.sql ../deploy/backend/sql/
           cp sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql ../deploy/backend/sql/
           cp sql/20261007_restore_pulsa24jam_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql ../deploy/backend/sql/
@@ -156,6 +157,7 @@ jobs:
                set +a;
                ./apply-sql-migration sql/20261007_disable_ambiguous_open_amount_app_products.sql;
                ./apply-sql-migration sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql;
+               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch.sql;
                ./apply-sql-migration sql/20261007_restore_pulsa24jam_open_amount_app_products.sql;
                ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql'"
 
@@ -186,6 +188,7 @@ jobs:
                set +a;
                ./apply-sql-migration sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql;
                ./apply-sql-migration sql/20261007_restore_pulsa24jam_open_amount_app_products.sql;
+               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch.sql;
                ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql'"
 
       - name: Verify public release
