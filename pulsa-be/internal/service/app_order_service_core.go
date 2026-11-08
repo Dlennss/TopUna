@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode"
 
+	"pulsa2/internal/catalog"
 	"pulsa2/internal/helper"
 	"pulsa2/internal/provider"
 	"pulsa2/internal/repository"
@@ -30,8 +31,12 @@ func (s *AppOrderService) SetPulsa24JamClient(client *provider.Pulsa24JamAdapter
 }
 
 func (s *AppOrderService) validatePulsa24JamProduct(ctx context.Context, productCode string) (*provider.Pulsa24JamProduct, error) {
+	source, allowed := catalog.Lookup(productCode)
+	if !allowed {
+		return nil, fmt.Errorf("SKU tidak terdaftar dalam katalog H2HR Pulsa24Jam")
+	}
 	if s.pulsa24JamClient == nil || !s.pulsa24JamClient.Configured() {
-		return nil, nil
+		return nil, fmt.Errorf("verifikasi katalog H2HR belum dikonfigurasi; pembelian belum tersedia")
 	}
 	items, err := s.pulsa24JamClient.Products(ctx, productCode)
 	if err != nil {
@@ -43,6 +48,12 @@ func (s *AppOrderService) validatePulsa24JamProduct(ctx context.Context, product
 	item := items[0]
 	if !item.Active {
 		return nil, fmt.Errorf("produk sedang tidak aktif di Pulsa24Jam")
+	}
+	if !strings.EqualFold(strings.TrimSpace(item.SKU), source.SKU) || !strings.EqualFold(strings.TrimSpace(item.PriceType), source.PriceType) {
+		return nil, fmt.Errorf("SKU atau tipe harga provider berbeda dari katalog H2HR")
+	}
+	if _, err := pulsa24JamCatalogPrice(item); err != nil {
+		return nil, err
 	}
 	return &item, nil
 }
@@ -163,7 +174,8 @@ func normalizeBuyer(buyerType string, memberID *int64) (string, *int64, error) {
 }
 
 func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int64, isCheckProduct bool) (nominal int64, qtyFinal int64, err error) {
-	if nominal, ok := pulsa24JamLockedGopayNominal(produk); ok {
+	_, verifiedH2HR := catalog.Lookup(produk.SKU)
+	if nominal, ok := pulsa24JamLockedGopayNominal(produk); ok && !verifiedH2HR {
 		return nominal, 1, nil
 	}
 	switch strings.ToUpper(strings.TrimSpace(produk.TipeHarga)) {
@@ -174,7 +186,7 @@ func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int
 		if isCheckProduct {
 			return 0, 1, nil
 		}
-		if produk.Nominal != nil && *produk.Nominal > 0 {
+		if !verifiedH2HR && produk.Nominal != nil && *produk.Nominal > 0 {
 			return *produk.Nominal, 1, nil
 		}
 		if hargaDasar <= 0 {
@@ -196,6 +208,9 @@ func resolveOrderNominal(produk *repository.ProdukRow, qty int64, hargaDasar int
 
 func isAppFeeBasedFixedProduct(produk *repository.ProdukRow, pricing *repository.ProdukAppPricingRow) bool {
 	if produk == nil || pricing == nil {
+		return false
+	}
+	if _, verifiedH2HR := catalog.Lookup(produk.SKU); verifiedH2HR {
 		return false
 	}
 	if produk.Nominal == nil || *produk.Nominal <= 0 {

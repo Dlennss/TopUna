@@ -65,7 +65,7 @@ export default async function GuestKategoriPage({ searchParams }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div className="space-y-4 px-5 pt-4">
-        <ServiceDirectory mode="guest" />
+        <ServiceDirectory mode="guest" categories={categories} />
       </div>
 
       <GuestBottomNav isLoggedIn={!!session?.backendToken} />

@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -26,8 +28,8 @@ var priceLinePattern = regexp.MustCompile(`^(?:\+\s*)?Rp\s*([0-9.]+)$`)
 
 func main() {
 	log.SetFlags(0)
-	if len(os.Args) != 3 {
-		log.Fatal("usage: go run ./scripts/pulsa24jam_catalog_from_dashboard <pasted-text.txt> <output.sql>")
+	if len(os.Args) != 4 {
+		log.Fatal("usage: go run ./scripts/pulsa24jam_catalog_from_dashboard <pasted-text.txt> <output.sql> <snapshot.json>")
 	}
 
 	inputPath := filepath.Clean(os.Args[1])
@@ -39,14 +41,68 @@ func main() {
 	}
 
 	products := parseDashboardProducts(lines)
-	if len(products) == 0 {
-		log.Fatal("no Pulsa24Jam products parsed")
+	if err := validateDashboard(lines, products); err != nil {
+		log.Fatal(err)
+	}
+	raw, err := os.ReadFile(inputPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	snapshot := struct {
+		SourceSHA256 string
+		Products     []productRow
+	}{fmt.Sprintf("%x", sha256.Sum256(raw)), products}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(os.Args[3]), 0o755); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile(os.Args[3], append(data, '\n'), 0o644); err != nil {
+		log.Fatal(err)
 	}
 
 	if err := writeMigration(outputPath, products); err != nil {
 		log.Fatalf("write %s: %v", outputPath, err)
 	}
 	fmt.Printf("Generated %s with %d Pulsa24Jam products\n", outputPath, len(products))
+}
+
+func validateDashboard(lines []string, products []productRow) error {
+	counts := map[string]int{}
+	priceLines := 0
+	for i, line := range lines {
+		if line == "Total Produk Aktif" || line == "Produk Dengan Harga Tetap" {
+			if i+1 >= len(lines) {
+				return fmt.Errorf("missing dashboard count")
+			}
+			n, err := strconv.Atoi(strings.ReplaceAll(lines[i+1], ".", ""))
+			if err != nil {
+				return fmt.Errorf("invalid dashboard count: %s", line)
+			}
+			counts[line] = n
+		}
+		if _, ok := parsePriceLine(line); ok {
+			priceLines++
+		}
+	}
+	if len(products) == 0 || len(products) != counts["Total Produk Aktif"] || priceLines != len(products) {
+		return fmt.Errorf("incomplete/duplicate catalog: parsed=%d prices=%d expected=%d", len(products), priceLines, counts["Total Produk Aktif"])
+	}
+	fixed := 0
+	for _, row := range products {
+		if row.PriceType == "FIXED" {
+			fixed++
+		}
+		if row.Category == "" || row.Brand == "" || row.SKU == "" || row.Name == "" || row.Price < 0 {
+			return fmt.Errorf("invalid product: %s", row.SKU)
+		}
+	}
+	if fixed != counts["Produk Dengan Harga Tetap"] {
+		return fmt.Errorf("fixed count mismatch: %d", fixed)
+	}
+	return nil
 }
 
 func readLines(path string) ([]string, error) {
@@ -173,7 +229,7 @@ func isStandaloneCategory(value string) bool {
 }
 
 func parseProductRow(lines []string, start int, category, brand string) (productRow, int, bool) {
-	if start+1 >= len(lines) {
+	if start+4 >= len(lines) {
 		return productRow{}, start, false
 	}
 	sku := normalizeSKU(lines[start])
@@ -182,10 +238,17 @@ func parseProductRow(lines []string, start int, category, brand string) (product
 		return productRow{}, start, false
 	}
 
-	priceType := "FIXED"
+	groupName := strings.TrimSpace(lines[start+2])
+	if groupName == "-" {
+		groupName = ""
+	}
+	priceType := strings.TrimSpace(lines[start+3])
+	if priceType != "FIXED" && !strings.HasPrefix(priceType, "OPEN_AMOUNT") {
+		return productRow{}, start, false
+	}
 	var maxNominal string
 	var price int64
-	i := start + 2
+	i := start + 3
 	for ; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(strings.ToUpper(line), "OPEN_AMOUNT") {
@@ -201,7 +264,7 @@ func parseProductRow(lines []string, start int, category, brand string) (product
 			return productRow{}, start, false
 		}
 	}
-	if price == 0 && priceType != "OPEN_AMOUNT" {
+	if _, ok := parsePriceLine(lines[start+4]); !ok {
 		return productRow{}, start, false
 	}
 
@@ -210,7 +273,7 @@ func parseProductRow(lines []string, start int, category, brand string) (product
 		Brand:          brand,
 		SKU:            sku,
 		Name:           name,
-		GroupName:      category,
+		GroupName:      groupName,
 		PriceType:      priceType,
 		Price:          price,
 		MaximumNominal: maxNominal,
@@ -225,9 +288,6 @@ func normalizeSKU(value string) string {
 
 func normalizeMasterName(value string) string {
 	value = strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
-	if strings.EqualFold(value, "shopee") {
-		return "ShopeePay"
-	}
 	return value
 }
 
@@ -281,7 +341,6 @@ func writeMigration(path string, products []productRow) error {
 	defer file.Close()
 
 	w := bufio.NewWriterSize(file, 1024*1024)
-	defer w.Flush()
 
 	fmt.Fprintln(w, "-- Generated from Pulsa24Jam H2HR dashboard export.")
 	fmt.Fprintln(w, "-- Re-run safe: refreshes the app catalog so active retail products are Pulsa24Jam H2HR only.")
@@ -358,7 +417,7 @@ func writeMigration(path string, products []productRow) error {
 	}
 
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "CREATE TEMP TABLE p24_h2hr_seed_unique AS")
+	fmt.Fprintln(w, "CREATE TEMP TABLE p24_h2hr_seed_unique ON COMMIT DROP AS")
 	fmt.Fprintln(w, "SELECT DISTINCT ON (sku)")
 	fmt.Fprintln(w, "  category_name, brand_name, sku, product_name, group_name, price_type, price, maximum_nominal")
 	fmt.Fprintln(w, "FROM p24_h2hr_seed")
@@ -408,7 +467,7 @@ func writeMigration(path string, products []productRow) error {
 	fmt.Fprintln(w, "INSERT INTO public.produk")
 	fmt.Fprintln(w, "  (sku, nama, group_name, kategori_id, brand_id, tipe_harga, nominal, maksimal_nominal, jam_buka, jam_tutup, aktif, dibuat_pada, diubah_pada)")
 	fmt.Fprintln(w, "SELECT seed.sku, seed.product_name, seed.group_name, k.id, b.id, seed.price_type,")
-	fmt.Fprintln(w, "       CASE WHEN seed.price_type = 'FIXED' THEN seed.price ELSE NULL END,")
+	fmt.Fprintln(w, "       NULL,")
 	fmt.Fprintln(w, "       seed.maximum_nominal, '00:00', '23:59', true, now(), now()")
 	fmt.Fprintln(w, "FROM p24_h2hr_seed_unique seed")
 	fmt.Fprintln(w, "JOIN LATERAL (")
@@ -447,9 +506,9 @@ func writeMigration(path string, products []productRow) error {
 	fmt.Fprintln(w, "  yuscom_category = EXCLUDED.yuscom_category,")
 	fmt.Fprintln(w, "  yuscom_sku = EXCLUDED.yuscom_sku,")
 	fmt.Fprintln(w, "  yuscom_name = EXCLUDED.yuscom_name,")
-	fmt.Fprintln(w, "  yuscom_status = 'ACTIVE',")
+	fmt.Fprintln(w, "  yuscom_status = CASE WHEN produk_app_pricing.yuscom_status LIKE 'PULSA24JAM_%' AND produk_app_pricing.yuscom_status <> 'PULSA24JAM_LOW_PRICE_HIDDEN' THEN produk_app_pricing.yuscom_status ELSE 'ACTIVE' END,")
 	fmt.Fprintln(w, "  yuscom_display_brand = EXCLUDED.yuscom_display_brand,")
-	fmt.Fprintln(w, "  aktif = true,")
+	fmt.Fprintln(w, "  aktif = CASE WHEN produk_app_pricing.yuscom_status LIKE 'PULSA24JAM_%' AND produk_app_pricing.yuscom_status <> 'PULSA24JAM_LOW_PRICE_HIDDEN' THEN false ELSE true END,")
 	fmt.Fprintln(w, "  fetched_at = now(),")
 	fmt.Fprintln(w, "  updated_at = now(),")
 	fmt.Fprintln(w, "  diubah_pada = now();")
@@ -470,8 +529,14 @@ func writeMigration(path string, products []productRow) error {
 	fmt.Fprintln(w, "  fee_rp = 0,")
 	fmt.Fprintln(w, "  diubah_pada = now();")
 	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "UPDATE public.produk_app_pricing app SET aktif = false, yuscom_status = CASE WHEN app.yuscom_status LIKE 'PULSA24JAM_%' THEN app.yuscom_status ELSE 'PULSA24JAM_LOW_PRICE_HIDDEN' END")
+	fmt.Fprintln(w, "FROM public.produk p WHERE p.id = app.produk_id AND app.provider = 'pulsa24jam'")
+	fmt.Fprintln(w, "AND p.tipe_harga::text = 'FIXED' AND app.harga <= 1000;")
+	fmt.Fprintln(w, "UPDATE public.produk_provider_map m SET aktif = a.aktif FROM public.produk_app_pricing a")
+	fmt.Fprintln(w, "WHERE m.produk_id = a.produk_id AND m.provider = 'pulsa24jam' AND a.provider = 'pulsa24jam'")
+	fmt.Fprintln(w, "AND m.kode_provider = a.yuscom_sku;")
 	fmt.Fprintln(w, "COMMIT;")
-	return nil
+	return w.Flush()
 }
 
 func sqlQuote(value string) string {

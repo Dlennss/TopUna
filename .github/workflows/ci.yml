@@ -18,6 +18,19 @@ jobs:
   backend:
     name: Backend Go
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: catalog_test
+          POSTGRES_PASSWORD: catalog-test-only
+          POSTGRES_DB: topuna_catalog_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U catalog_test -d topuna_catalog_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      H2HR_TEST_DATABASE_URL: postgres://catalog_test:catalog-test-only@127.0.0.1:5432/topuna_catalog_test?sslmode=disable
     defaults:
       run:
         working-directory: pulsa-be
@@ -35,8 +48,19 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Verify catalog migration in disposable database
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql "$H2HR_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -f ../ops/tests/h2hr-catalog-fixture.sql \
+            -f sql/20261108_refresh_pulsa24jam_h2hr_catalog.sql \
+            -f ../ops/tests/h2hr-catalog-assert.sql \
+            -f sql/20261108_refresh_pulsa24jam_h2hr_catalog.sql \
+            -f ../ops/tests/h2hr-catalog-assert.sql
+
       - name: Test
-        run: go test ./...
+        run: go test -count=1 ./...
 
   frontend:
     name: Frontend Next.js
@@ -67,6 +91,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Verify H2HR labels, prices and brand assets
+        run: node scripts/check-h2hr-catalog.mjs
 
       - name: Build
         run: npm run build

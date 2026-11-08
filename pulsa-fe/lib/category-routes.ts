@@ -23,33 +23,10 @@ const CATEGORY_ROUTES: CategoryRoute[] = [
   { id: "20", name: "Gas Negara", guestPath: "/pgn" },
 ];
 
-const CATEGORY_ROUTE_BY_NAME: Record<string, string> = {
-  pulsa: "/pulsa",
-  "paket data": "/paket-data",
-  "e-money": "/ewallet",
-  "e-wallet": "/ewallet",
-  pln: "/listrik",
-  listrik: "/listrik",
-  game: "/game",
-  tv: "/tv",
-  "aktivasi perdana": "/aktivasi-perdana",
-  "masa aktif": "/masa-aktif",
-  "paket telepon": "/paket-telepon",
-  pdam: "/pdam",
-  "internet pascabayar": "/internet-pascabayar",
-  "hp pascabayar": "/hp-pascabayar",
-  bpjs: "/bpjs",
-  "gas negara": "/pgn",
-};
-
-function normalizeName(name: string) {
-  return name.trim().toLowerCase();
-}
-
 export function getGuestCategoryPathById(id: string) {
   return CATEGORY_ROUTES.find((item) => item.id === String(id))?.guestPath ?? null;
 }
 
 export function getGuestCategoryPath(item: Pick<UserCategoryItem, "id" | "nama">) {
-  return CATEGORY_ROUTE_BY_NAME[normalizeName(item.nama)] ?? getGuestCategoryPathById(String(item.id)) ?? `/kategori/${item.id}?name=${encodeURIComponent(item.nama)}`;
+  return `/kategori/${item.id}?name=${encodeURIComponent(item.nama)}`;
 }

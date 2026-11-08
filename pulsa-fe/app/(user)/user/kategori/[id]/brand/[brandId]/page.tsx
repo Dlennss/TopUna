@@ -1,5 +1,6 @@
 import { getAppServerSession } from "@/lib/server-auth";
 import { getProductsByBrand } from "@/lib/api.products";
+import { getCatalogCategoryKind } from "@/lib/catalog-category";
 import type { UserSession } from "@/components/user/types";
 import { UserBottomNav } from "@/components/user/UserBottomNav";
 import { UserAuthClientSync } from "@/components/user/UserAuthClientSync";
@@ -33,19 +34,11 @@ export default async function UserBrandProductsPage({ params }: PageProps) {
   const products = await getProductsByBrand(id, brandId);
   const brand = products[0]?.brand_nama || "Brand";
   const categoryName = products[0]?.kategori_nama || "";
-  const isDataCategory = String(categoryName).toUpperCase().includes("DATA");
-  const normalizedCategoryName = String(categoryName).toUpperCase();
-  const isWalletCategory = normalizedCategoryName.includes("E-WALLET") || normalizedCategoryName.includes("E-MONEY");
-  const isBillingCategory = !isWalletCategory && ["7", "11", "17", "18", "20"].includes(String(id));
-  const billingPlaceholder = id === "11"
-    ? "Masukkan ID pelanggan / nomor meter"
-    : id === "17"
-      ? "Masukkan nomor pelanggan PDAM"
-      : id === "18"
-        ? "Masukkan nomor HP pascabayar"
-        : id === "20"
-          ? "Masukkan ID pelanggan gas"
-          : "Masukkan ID pelanggan";
+  const kind = getCatalogCategoryKind(categoryName);
+  const isDataCategory = kind === "data";
+  const isWalletCategory = kind === "wallet";
+  const isBillingCategory = kind === "billing";
+  const billingPlaceholder = "Masukkan ID pelanggan";
   const billingDescription = `Masukkan data pelanggan ${brand} terlebih dulu sebelum memilih produk pembayaran.`;
 
   return (
@@ -57,7 +50,7 @@ export default async function UserBrandProductsPage({ params }: PageProps) {
             <div className="grid min-h-40 place-items-center rounded-3xl border border-dashed border-slate-200 bg-white px-4 text-center text-sm text-slate-500 shadow-[0_8px_22px_rgba(15,23,42,0.13)]">
               Belum ada produk aktif untuk brand ini.
             </div>
-          ) : id === "19" && brandId === "171" ? (
+          ) : kind === "bpjs" ? (
             <BPJSBrandFlow items={products} authToken={backendToken} buyerRole={buyerRole} />
           ) : isDataCategory ? (
             <GuestPaketDataQuickOrder
@@ -68,9 +61,9 @@ export default async function UserBrandProductsPage({ params }: PageProps) {
               forcedBrand={{ id: Number(brandId), nama: brand, aktif: true }}
               brandHrefPrefix="/user/kategori"
             />
-          ) : id === "2" || isWalletCategory ? (
+          ) : isWalletCategory ? (
             <EMoneyBrandFlow items={products} isLoggedIn={isLoggedIn} authToken={backendToken} mode="user" buyerRole={buyerRole} />
-          ) : id === "1" ? (
+          ) : kind === "pulsa" ? (
             <GuestPulsaQuickOrder
               kategoriId={String(id)}
               brands={[]}

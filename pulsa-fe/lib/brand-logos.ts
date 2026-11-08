@@ -1,5 +1,3 @@
-import generatedBrandMap from "@/lib/generated-yuscom-display-brand-map.json";
-
 export type BrandLogoMeta = {
   src: string;
   alt: string;
@@ -83,34 +81,34 @@ const BRAND_LOGOS: Record<string, BrandLogoMeta> = {
     sourcePage: "https://commons.wikimedia.org/wiki/File:Shopee.svg",
   },
   shopeepay: {
-    src: "/brand-logos/shopee.svg",
+    src: "/brand-logos/shopeepay-official.svg",
     alt: "Logo ShopeePay",
-    sourcePage: "https://commons.wikimedia.org/wiki/File:Shopee.svg",
+    sourcePage: "https://product.shopeepay.co.id/products/brand-guidelines",
   },
   "shopee pay": {
-    src: "/brand-logos/shopee.svg",
+    src: "/brand-logos/shopeepay-official.svg",
     alt: "Logo ShopeePay",
-    sourcePage: "https://commons.wikimedia.org/wiki/File:Shopee.svg",
+    sourcePage: "https://product.shopeepay.co.id/products/brand-guidelines",
   },
   astrapay: {
-    src: "/images/ewallet/logo_astrapay.svg",
+    src: "/brand-logos/astrapay-colorful.png",
     alt: "Logo AstraPay",
-    sourcePage: "local:/public/images/ewallet/logo_astrapay.svg",
+    sourcePage: "https://astrapay.com/",
   },
   "astra pay": {
-    src: "/images/ewallet/logo_astrapay.svg",
+    src: "/brand-logos/astrapay-colorful.png",
     alt: "Logo AstraPay",
-    sourcePage: "local:/public/images/ewallet/logo_astrapay.svg",
+    sourcePage: "https://astrapay.com/",
   },
   isaku: {
-    src: "/images/ewallet/logo_isaku.svg",
+    src: "/brand-logos/isaku-official.png",
     alt: "Logo i.saku",
-    sourcePage: "local:/public/images/ewallet/logo_isaku.svg",
+    sourcePage: "https://www.i-saku.com/",
   },
   "i.saku": {
-    src: "/images/ewallet/logo_isaku.svg",
+    src: "/brand-logos/isaku-official.png",
     alt: "Logo i.saku",
-    sourcePage: "local:/public/images/ewallet/logo_isaku.svg",
+    sourcePage: "https://www.i-saku.com/",
   },
   smartfren: {
     src: "/images/providers/logo_smartfren.webp",
@@ -307,6 +305,21 @@ const BRAND_LOGOS: Record<string, BrandLogoMeta> = {
     alt: "Logo PGN",
     sourcePage: "local:/public/images/gas/Logo_PGN.png",
   },
+  grab: {
+    src: "/yuscom-family-logos/grab.svg",
+    alt: "Logo Grab",
+    sourcePage: "https://www.grab.com/id/",
+  },
+  kaspro: {
+    src: "/yuscom-display-brand-logos/kaspro.png",
+    alt: "Logo KasPro",
+    sourcePage: "https://kaspro.id/",
+  },
+  maxim: {
+    src: "/yuscom-display-brand-logos/maxim.ico",
+    alt: "Logo Maxim",
+    sourcePage: "https://www.maxim.id/",
+  },
   "free fire": {
     src: "/images/games/banner_freefire.png",
     alt: "Logo Free Fire",
@@ -392,26 +405,18 @@ function normalizeBrandName(name: string) {
 export function getBrandLogo(name: string): BrandLogoMeta | null {
   const key = normalizeBrandName(name);
   const withoutBankPrefix = key.replace(/^bank\s+/, "");
-  const matched = BRAND_LOGOS[key] ?? BRAND_LOGOS[withoutBankPrefix];
-  if (matched) return matched;
-
-  const generatedMap = generatedBrandMap as Record<string, string>;
-  let generated = generatedMap[name] ?? generatedMap[name.trim()];
-  if (!generated) {
-    for (const [brandName, fileName] of Object.entries(generatedMap)) {
-      if (normalizeBrandName(brandName) === key || normalizeBrandName(brandName) === withoutBankPrefix) {
-        generated = fileName;
-        break;
-      }
-    }
-  }
-  if (generated) {
-    return {
-      src: `/yuscom-display-brand-logos-generated/${generated}`,
-      alt: `Logo ${name}`,
-      sourcePage: "generated-local-brand-mark",
-    };
-  }
-
-  return null;
+  const aliases: Record<string, string> = {
+    "indosat data freedom": "indosat",
+    "indosat data harian": "indosat",
+    "magic chess : go go": "magic chess go go",
+    "mobile legend br": "mobile legend",
+    "mobile legend ph": "mobile legend",
+    "point blank cash": "point blank",
+    "roblox idr": "roblox",
+    myrepublic: "my republik",
+  };
+  const matched = BRAND_LOGOS[aliases[key] ?? key] ?? BRAND_LOGOS[withoutBankPrefix];
+  // These legacy SVGs are locally drawn badges, not original brand assets.
+  if (matched?.src.startsWith("/images/games/") && matched.src.endsWith(".svg")) return null;
+  return matched ?? null;
 }

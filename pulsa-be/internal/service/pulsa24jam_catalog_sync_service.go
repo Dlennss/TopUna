@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"pulsa2/internal/catalog"
 	"pulsa2/internal/provider"
 	"pulsa2/internal/repository"
 )
@@ -27,20 +29,19 @@ func (s *Pulsa24JamCatalogSyncService) Sync(ctx context.Context) (*repository.Pu
 	}
 	items := make([]repository.Pulsa24JamCatalogItem, 0, len(products))
 	for _, product := range products {
+		if _, allowed := catalog.Lookup(product.SKU); !allowed {
+			continue
+		}
+		if _, err := pulsa24JamCatalogPrice(product); err != nil {
+			return nil, err
+		}
 		items = append(items, pulsa24JamCatalogItemFromProduct(product))
 	}
 	return s.repo.Sync(ctx, items)
 }
 
 func pulsa24JamCatalogItemFromProduct(product provider.Pulsa24JamProduct) repository.Pulsa24JamCatalogItem {
-	price := int64(0)
-	if product.AppBasePrice != nil {
-		price = *product.AppBasePrice
-	} else if product.Price != nil {
-		price = *product.Price
-	} else if product.AdditionalFee != nil {
-		price = *product.AdditionalFee
-	}
+	price, _ := pulsa24JamCatalogPrice(product)
 	return repository.Pulsa24JamCatalogItem{
 		SKU:            product.SKU,
 		Name:           product.Name,
@@ -51,4 +52,21 @@ func pulsa24JamCatalogItemFromProduct(product provider.Pulsa24JamProduct) reposi
 		Price:          price,
 		MaximumNominal: product.MaximumNominal,
 	}
+}
+
+func pulsa24JamCatalogPrice(product provider.Pulsa24JamProduct) (int64, error) {
+	values := []*int64{product.AppBasePrice, product.Price}
+	if strings.EqualFold(strings.TrimSpace(product.PriceType), "OPEN_AMOUNT") {
+		values = append(values, product.AdditionalFee)
+	}
+	for _, value := range values {
+		if value == nil {
+			continue
+		}
+		if *value < 0 {
+			break
+		}
+		return *value, nil
+	}
+	return 0, fmt.Errorf("harga SKU %s tidak lengkap; katalog tidak diubah", product.SKU)
 }

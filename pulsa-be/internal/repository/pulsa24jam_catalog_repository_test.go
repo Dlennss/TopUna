@@ -2,31 +2,38 @@ package repository
 
 import "testing"
 
-func TestNormalizePulsa24JamCatalogItemLocksNominalBeforeADM(t *testing.T) {
+func TestNormalizePulsa24JamCatalogItemPreservesUpstreamOpenAmount(t *testing.T) {
 	item := normalizePulsa24JamCatalogItem(Pulsa24JamCatalogItem{
 		SKU:       "gpcad1000",
 		Name:      "GOPAY CUSTOMER 1000.000 (ADM:1000)",
 		PriceType: "OPEN_AMOUNT",
 	})
-	if item.PriceType != "FIXED" {
-		t.Fatalf("PriceType = %q, want FIXED", item.PriceType)
+	if item.PriceType != "OPEN_AMOUNT" {
+		t.Fatalf("PriceType = %q, want OPEN_AMOUNT", item.PriceType)
 	}
-	if item.Nominal == nil || *item.Nominal != 1000000 {
-		t.Fatalf("Nominal = %v, want 1000000", item.Nominal)
+	if item.Nominal != nil {
+		t.Fatalf("Nominal = %v, must not infer amount from name", item.Nominal)
 	}
 }
 
-func TestNormalizePulsa24JamCatalogItemLocksDanaPromoNominal(t *testing.T) {
+func TestNormalizePulsa24JamCatalogItemDoesNotInventDanaNominal(t *testing.T) {
 	item := normalizePulsa24JamCatalogItem(Pulsa24JamCatalogItem{
 		SKU:       "dana1p",
 		Name:      "E-WALLET DANA 1.000 PROMO",
 		PriceType: "OPEN_AMOUNT",
 	})
-	if item.PriceType != "FIXED" {
-		t.Fatalf("PriceType = %q, want FIXED", item.PriceType)
+	if item.PriceType != "OPEN_AMOUNT" {
+		t.Fatalf("PriceType = %q, want OPEN_AMOUNT", item.PriceType)
 	}
-	if item.Nominal == nil || *item.Nominal != 1000 {
-		t.Fatalf("Nominal = %v, want 1000", item.Nominal)
+	if item.Nominal != nil {
+		t.Fatalf("Nominal = %v, must not infer amount from name", item.Nominal)
+	}
+}
+
+func TestNormalizePulsa24JamKeepsOriginalName(t *testing.T) {
+	item := normalizePulsa24JamCatalogItem(Pulsa24JamCatalogItem{SKU: "GPC100", Name: "SALDO GOPAY CUSTOMER H2H 100.000", PriceType: "OPEN_AMOUNT"})
+	if item.Name != "SALDO GOPAY CUSTOMER H2H 100.000" {
+		t.Fatal(item.Name)
 	}
 }
 

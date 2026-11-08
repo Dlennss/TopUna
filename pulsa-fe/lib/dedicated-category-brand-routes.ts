@@ -28,7 +28,10 @@ const GUEST_CATEGORY_BRAND_BASE: Record<string, string> = {
   "20": "/pgn",
 };
 
-export function getDedicatedGuestBrandPath(kategoriId: string, brand: Pick<UserBrandItem, "nama">) {
+export function getDedicatedGuestBrandPath(kategoriId: string, brand: Pick<UserBrandItem, "nama">, categoryName?: string) {
+  // Numeric IDs are installation-specific; only explicitly named categories may use legacy shortcuts.
+  const expectedNames: Record<string, string> = { "1": "pulsa", "2": "paket data", "3": "e-wallet", "4": "pln", "5": "game", "7": "tv", "8": "aktivasi perdana", "9": "masa aktif", "10": "paket telepon", "17": "pdam", "18": "hp pascabayar", "20": "gas negara" };
+  if (!categoryName || categoryName.trim().toLowerCase() !== expectedNames[String(kategoriId)]) return null;
   const base = GUEST_CATEGORY_BRAND_BASE[String(kategoriId)];
   if (!base) return null;
   const slug = String(kategoriId) === "5" ? getGameBrandSlug(brand.nama) : getGenericBrandSlug(brand.nama);

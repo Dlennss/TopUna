@@ -1,0 +1,22 @@
+[Unit]
+Description=Topuna Backend
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=topuna
+Group=topuna
+StateDirectory=topuna
+WorkingDirectory=/var/lib/topuna
+EnvironmentFile=/etc/topuna/backend.env
+Environment=HOST=127.0.0.1 PORT=8103
+# The activation helper replaces this with the versioned release binary.
+ExecStart=/usr/bin/false
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

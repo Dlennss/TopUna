@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"pulsa2/internal/catalog"
 )
 
 var pulsa24JamNominalBeforeParenPattern = regexp.MustCompile(`([0-9][0-9.]*)\s*\(`)
@@ -67,9 +69,18 @@ ON CONFLICT (nama) DO UPDATE SET aktif = true, diubah_pada = now()
 	synced := 0
 	for _, raw := range items {
 		item := normalizePulsa24JamCatalogItem(raw)
-		if item.SKU == "" || item.Name == "" {
+		if item.SKU == "" || item.Name == "" || item.Price < 0 {
 			continue
 		}
+		source, allowed := catalog.Lookup(item.SKU)
+		if !allowed {
+			continue
+		}
+		if item.PriceType != source.PriceType {
+			return nil, fmt.Errorf("tipe harga SKU %s berbeda dari katalog H2HR; sinkronisasi dibatalkan", item.SKU)
+		}
+		item.Name, item.GroupName = source.Name, source.GroupName
+		item.CategoryName, item.BrandName = source.Category, source.Brand
 		categoryID, err := ensureCatalogMaster(ctx, tx, "kategori", item.CategoryName)
 		if err != nil {
 			return nil, err
@@ -168,7 +179,7 @@ ON CONFLICT (produk_id, provider, kode_provider) DO UPDATE SET
 
 func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalogItem {
 	item.SKU = strings.ToUpper(strings.TrimSpace(item.SKU))
-	item.Name = normalizePulsa24JamH2HRProductName(item.Name)
+	item.Name = strings.TrimSpace(item.Name)
 	item.GroupName = strings.TrimSpace(item.GroupName)
 	item.CategoryName = strings.TrimSpace(item.CategoryName)
 	item.BrandName = strings.TrimSpace(item.BrandName)
@@ -181,16 +192,6 @@ func normalizePulsa24JamCatalogItem(item Pulsa24JamCatalogItem) Pulsa24JamCatalo
 	}
 	if item.BrandName == "" {
 		item.BrandName = "Pulsa24Jam"
-	}
-	if item.PriceType != "OPEN_AMOUNT" {
-		item.PriceType = "FIXED"
-	}
-	if item.PriceType == "OPEN_AMOUNT" {
-		if nominal, ok := parsePulsa24JamFixedNominal(item.Name); ok {
-			item.PriceType = "FIXED"
-			item.Nominal = &nominal
-			item.MaximumNominal = nil
-		}
 	}
 	return item
 }

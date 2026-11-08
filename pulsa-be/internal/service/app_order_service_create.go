@@ -58,6 +58,9 @@ func (s *AppOrderService) Create(ctx context.Context, in repository.AppOrderCrea
 	if err != nil {
 		return nil, err
 	}
+	if !strings.EqualFold(providerCode, produk.SKU) || !strings.EqualFold(liveProduct.PriceType, produk.TipeHarga) {
+		return nil, fmt.Errorf("katalog produk berubah; sinkronkan katalog H2HR sebelum membeli")
+	}
 
 	feeKategoriID := produk.KategoriID
 	feeRow, err := s.kategoriFeeRepo.GetByKategoriIDActive(ctx, produk.KategoriID)
@@ -85,12 +88,15 @@ func (s *AppOrderService) Create(ctx context.Context, in repository.AppOrderCrea
 
 	hargaDasar := pricingRow.Harga
 	if liveProduct != nil {
-		if liveProduct.AppBasePrice != nil {
-			hargaDasar = *liveProduct.AppBasePrice
-		} else if liveProduct.Price != nil {
-			hargaDasar = *liveProduct.Price
-		} else if liveProduct.AdditionalFee != nil {
-			hargaDasar = *liveProduct.AdditionalFee
+		hargaDasar, err = pulsa24JamCatalogPrice(*liveProduct)
+		if err != nil {
+			return nil, err
+		}
+		if strings.EqualFold(liveProduct.PriceType, "FIXED") && hargaDasar <= 1000 {
+			return nil, fmt.Errorf("produk harga rendah belum tersedia untuk pembelian")
+		}
+		if liveProduct.MaximumNominal != nil && in.Qty > *liveProduct.MaximumNominal {
+			return nil, fmt.Errorf("nominal melebihi batas terbaru provider")
 		}
 	}
 	isCheckProduct := isAppCheckProduct(produk)

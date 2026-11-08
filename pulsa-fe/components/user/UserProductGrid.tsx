@@ -35,49 +35,6 @@ function isEMoneyItem(item: UserProductItem) {
   return category.includes("E-MONEY") || category.includes("E-WALLET");
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function toTitleCase(value: string) {
-  return value
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function getEMoneyCardTitle(item: UserProductItem) {
-  if (item.tipe_harga === "OPEN_AMOUNT") {
-    const raw = String(item.nama || "").replace(/\s+/g, " ").trim();
-    const brand = String(item.brand_nama || "").trim();
-    let cleaned = raw;
-
-    if (brand) {
-      const compactBrand = brand.replace(/\s+/g, "");
-      const brandPatterns = [brand, compactBrand].filter(Boolean);
-      for (const pattern of brandPatterns) {
-        cleaned = cleaned.replace(new RegExp(`^${escapeRegExp(pattern)}\\s*`, "i"), "").trim();
-      }
-    }
-
-    return toTitleCase(cleaned || "Bebas Nominal");
-  }
-  return extractLargeNominalLabel(item);
-}
-
-function extractLargeNominalLabel(item: UserProductItem) {
-  const upper = String(item.nama || "").toUpperCase();
-  const dotted = upper.match(/(\d+(?:\.\d{3})+)/);
-  if (dotted) return dotted[1];
-
-  const compact = upper.match(/(\d+)\s*K\b/);
-  if (compact) return `${Number.parseInt(compact[1], 10)}.000`;
-
-  return new Intl.NumberFormat("id-ID").format(Number(item.nominal || 0));
-}
-
 function UserProductCard({
   item,
   isLoggedIn,
@@ -101,13 +58,13 @@ function UserProductCard({
   const effectiveRole = isLoggedIn ? buyerRole : "guest";
   const feeActive = getRetailFeeForProduct(item, effectiveRole);
   const fixedPrice = isFixed ? getDisplayedFixedPrice(item, effectiveRole) : null;
-  const finalPrice = Number(fixedPrice || feeActive || 0);
+  const finalPrice = isFixed ? Number(fixedPrice ?? 0) : Number(item.harga_dasar_app ?? 0) + feeActive;
   const packageStyle = isPackageStyleItem(item);
   const emoneyStyle = isEMoneyItem(item);
   const displayName = getDisplayProductName(item);
 
   if (emoneyStyle) {
-    const nominalLabel = getEMoneyCardTitle(item);
+    const nominalLabel = displayName;
     const brandLabel = String(item.brand_nama || "E-Wallet").trim();
     return (
       <button
@@ -117,15 +74,13 @@ function UserProductCard({
           onBuy(item);
         }}
         disabled={!canBuy}
-        className="group relative min-h-36 overflow-hidden rounded-[22px] border border-emerald-950/10 bg-white p-3 text-left shadow-[0_14px_30px_rgba(6,78,59,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:border-lime-300 hover:shadow-[0_18px_36px_rgba(6,78,59,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="group relative min-h-44 rounded-lg border border-rose-100 bg-white p-3 text-left transition-colors hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-[#651e34] via-[#c93450] to-[#b8f138]" />
-        <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-lime-200/55 blur-2xl" />
         <div className="relative flex h-full min-h-30 flex-col justify-between gap-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#c93450]">Nominal Top Up</p>
-              <p className={item.tipe_harga === "OPEN_AMOUNT" ? "mt-2 line-clamp-2 text-[21px] font-black leading-tight text-slate-950" : "mt-2 text-[26px] font-black leading-none tracking-tight text-slate-950"}>
+              <p className="break-all font-mono text-[10px] text-slate-500">{item.sku}</p>
+              <p className="mt-2 break-words text-sm font-bold leading-5 text-slate-950">
                 {nominalLabel}
               </p>
             </div>
@@ -133,12 +88,12 @@ function UserProductCard({
 
           <div className="space-y-2">
             <div>
-              <p className="line-clamp-2 min-h-8 text-[11px] font-bold leading-4 text-slate-500">{displayName || `Top up ${brandLabel}`}</p>
+              <p className="text-[11px] leading-4 text-slate-500">{brandLabel} - {isFixed ? "Harga tetap" : "Biaya tambahan"}</p>
               <p className="text-sm font-black text-[#651e34]">
-                {canBuy ? formatRupiah(finalPrice) : (buyBlockedLabel || "Lengkapi dulu")}
+                {canBuy ? `${isFixed ? "" : "+ "}${formatRupiah(finalPrice)}` : (buyBlockedLabel || "Lengkapi dulu")}
               </p>
             </div>
-            <span className="inline-flex h-8 w-full items-center justify-center rounded-2xl bg-[#651e34] px-3 text-xs font-black text-white shadow-[0_10px_20px_rgba(5,46,38,0.18)] transition group-hover:bg-[#c93450]">
+            <span className="inline-flex h-8 w-full items-center justify-center rounded-md bg-[#c93450] px-3 text-xs font-bold text-white">
               {canBuy ? (buyLabel || "Top Up") : (buyBlockedLabel || "Lengkapi dulu")}
             </span>
           </div>
@@ -156,6 +111,7 @@ function UserProductCard({
             <h2 className={`text-slate-900 transition-colors group-hover:text-sky-900 ${packageStyle ? "line-clamp-3 text-[13px] font-bold leading-tight" : "line-clamp-2 text-sm font-bold"}`}>
               {displayName}
             </h2>
+            <p className="mt-1 break-all font-mono text-[10px] text-slate-500">{item.sku}</p>
           </div>
         </div>
 
@@ -171,7 +127,7 @@ function UserProductCard({
           <div className="mt-2 rounded-xl bg-linear-to-r from-slate-50 to-slate-100 px-4 py-3 border border-slate-200/50">
             <p className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">Harga</p>
             <p className="mt-1 text-sm font-bold text-slate-900">
-              {isFixed && fixedPrice !== null ? formatRupiah(fixedPrice) : `+ ${formatRupiah(feeActive)}`}
+              {isFixed && fixedPrice !== null ? formatRupiah(fixedPrice) : `+ ${formatRupiah(finalPrice)}`}
             </p>
           </div>
         )}

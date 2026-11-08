@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getCategories } from "@/lib/api.products";
+import type { UserCategoryItem } from "@/components/user/types";
 import { GuestCategoryPageContent } from "@/components/site/GuestCategoryPageContent";
 import { buildBreadcrumbJsonLd, buildCollectionJsonLd, buildPageMetadata } from "@/lib/site-search";
 
@@ -10,6 +12,8 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function GamePage() {
+  const categories = (await getCategories()) as UserCategoryItem[];
+  const category = categories.find(item => item.aktif && item.nama.trim().toLowerCase() === "game");
   const collectionJsonLd = buildCollectionJsonLd({
     title: "Top Up Game Online | Topuna",
     description: "Top up Mobile Legends, Free Fire, PUBG Mobile, Roblox, dan game online lain di Topuna dengan pilihan nominal yang jelas.",
@@ -24,7 +28,7 @@ export default async function GamePage() {
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <GuestCategoryPageContent kategoriId="5" title="Game" />
+      {category ? <GuestCategoryPageContent kategoriId={String(category.id)} title="Game" /> : <p className="p-6 text-sm text-slate-500">Kategori game belum tersedia.</p>}
     </main>
   );
 }

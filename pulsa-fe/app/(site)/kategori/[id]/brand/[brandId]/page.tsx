@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextauth";
 import { getProductsByBrand } from "@/lib/api.products";
+import { getCatalogCategoryKind } from "@/lib/catalog-category";
 import type { UserSession } from "@/components/user/types";
 import { GuestBottomNav } from "@/components/guest/GuestBottomNav";
 import { GuestProductGrid } from "@/components/guest/GuestProductGrid";
@@ -66,17 +67,10 @@ export default async function GuestBrandProductsPage({ params }: PageProps) {
     { name: categoryName || "Produk", path: `/kategori/${id}` },
     { name: brand, path: `/kategori/${id}/brand/${brandId}` },
   ]);
-  const isDataCategory = String(categoryName).toUpperCase().includes("DATA");
-  const isBillingCategory = ["3", "7", "11", "17", "18", "20"].includes(String(id));
-  const billingPlaceholder = id === "11"
-    ? "Masukkan ID pelanggan / nomor meter"
-    : id === "17"
-      ? "Masukkan nomor pelanggan PDAM"
-      : id === "18"
-        ? "Masukkan nomor HP pascabayar"
-        : id === "20"
-          ? "Masukkan ID pelanggan gas"
-          : "Masukkan ID pelanggan";
+  const kind = getCatalogCategoryKind(categoryName);
+  const isDataCategory = kind === "data";
+  const isBillingCategory = kind === "billing";
+  const billingPlaceholder = "Masukkan ID pelanggan";
   const billingDescription = `Masukkan data pelanggan ${brand} terlebih dulu sebelum memilih produk pembayaran.`;
 
   return (
@@ -92,7 +86,7 @@ export default async function GuestBrandProductsPage({ params }: PageProps) {
             <div className="grid min-h-40 place-items-center rounded-3xl border border-dashed border-slate-200 bg-white px-4 text-center text-sm text-slate-500 shadow-[0_8px_22px_rgba(15,23,42,0.13)]">
               Belum ada produk aktif untuk brand ini.
             </div>
-          ) : id === "1" ? (
+          ) : kind === "pulsa" ? (
             <GuestPulsaQuickOrder
               kategoriId={id}
               brands={[{ id: Number(brandId), nama: brand, aktif: true }]}
@@ -100,7 +94,7 @@ export default async function GuestBrandProductsPage({ params }: PageProps) {
               buyerRole={buyerRole}
               forcedBrand={{ id: Number(brandId), nama: brand, aktif: true }}
             />
-          ) : id === "19" && brandId === "171" ? (
+          ) : kind === "bpjs" ? (
             <BPJSBrandFlow items={products} authToken={backendToken} buyerRole={buyerRole} />
           ) : isDataCategory ? (
             <GuestPaketDataQuickOrder
@@ -110,7 +104,7 @@ export default async function GuestBrandProductsPage({ params }: PageProps) {
               buyerRole={buyerRole}
               forcedBrand={{ id: Number(brandId), nama: brand, aktif: true }}
             />
-          ) : id === "2" ? (
+          ) : kind === "wallet" ? (
             <EMoneyBrandFlow items={products} isLoggedIn={isLoggedIn} authToken={backendToken} mode={isLoggedIn ? "user" : "guest"} buyerRole={buyerRole} />
           ) : isBillingCategory ? (
             <RetailBillingEntryFlow

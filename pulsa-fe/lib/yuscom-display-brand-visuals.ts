@@ -1,6 +1,6 @@
 import type { YuscomFamilyVisual } from "@/lib/yuscom-family-visuals";
 import { getYuscomFamilyVisual } from "@/lib/yuscom-family-visuals";
-import generatedBrandMap from "@/lib/generated-yuscom-display-brand-map.json";
+import { getBrandLogo } from "@/lib/brand-logos";
 
 function image(src: string, alt: string, sourcePage: string): YuscomFamilyVisual {
   return { kind: "image", src, alt, sourcePage };
@@ -40,15 +40,7 @@ export function getYuscomDisplayBrandVisual(displayBrand: string): YuscomFamilyV
   if (DISPLAY_BRAND_VISUALS[key]) {
     return DISPLAY_BRAND_VISUALS[key];
   }
-  if (displayBrand.trim()) {
-    const generatedFile = (generatedBrandMap as Record<string, string>)[displayBrand];
-    if (generatedFile) {
-      return image(
-        `/yuscom-display-brand-logos-generated/${generatedFile}`,
-        `Logo ${displayBrand}`,
-        "generated-local-brand-mark"
-      );
-    }
-  }
+  const logo = getBrandLogo(displayBrand);
+  if (logo) return image(logo.src, logo.alt, logo.sourcePage);
   return getYuscomFamilyVisual(displayBrand);
 }

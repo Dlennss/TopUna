@@ -90,6 +90,11 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 		return fmt.Errorf("%s", msg)
 	}
 	providerQty := order.Qty
+	if err := validateH2HRDispatch(providerProductCode, order); err != nil {
+		msg := err.Error()
+		_ = s.handleFailedOrder(ctx, order, 0, msg, "katalog H2HR tidak cocok")
+		return fmt.Errorf("%s", msg)
+	}
 	if provider == providerpkg.Pulsa24JamProviderName {
 		providerProductCode, providerQty = resolvePulsa24JamAppRequest(providerProductCode, order)
 	}

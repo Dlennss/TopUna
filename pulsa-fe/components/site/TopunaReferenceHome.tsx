@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RetailBottomNav } from "./RetailBottomNav";
 import {
   Bell,
   Bolt,
@@ -6,8 +7,6 @@ import {
   FileText,
   Gift,
   Grid3X3,
-  History,
-  Home,
   LogIn,
   Plus,
   ReceiptText,
@@ -59,18 +58,6 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
 
   return (
     <div className="min-h-dvh bg-[#fff7fa] pb-32 text-[#08132c]">
-      <style>{`
-        body:has([data-topuna-home="true"]) .brand-bottom-nav,
-        body:has([data-topuna-home="true"]) [class*="brand-bottom-nav"],
-        body:has([data-topuna-home="true"]) nav:not([data-topuna-main-nav="true"]),
-        body:has([data-topuna-home="true"]) section[class*="fixed"][class*="bottom"],
-        body:has([data-topuna-home="true"]) img[src*="bottom_nav_full"],
-        body:has([data-topuna-home="true"]) img[src*="home_indicator"],
-        body:has([data-topuna-home="true"]) img[src*="08_bottom_nav"] {
-          display: none !important;
-        }
-      `}</style>
-      <div data-topuna-home="true" className="sr-only" aria-hidden="true" />
       <header className="relative overflow-hidden bg-[#c8133f] px-5 pb-10 pt-5 text-white">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/12" />
         <div className="pointer-events-none absolute -right-14 top-24 h-56 w-56 rounded-full bg-[#ff6a8c]/45" />
@@ -236,14 +223,7 @@ export function TopunaReferenceHome({ viewer }: { viewer?: TopunaHomeViewer }) {
         </Link>
       </main>
 
-      <nav data-topuna-main-nav="true" className="fixed inset-x-0 bottom-0 z-[90] mx-auto w-full max-w-md border-t border-rose-100/80 bg-white px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(51,24,37,0.10)] md:w-97.5">
-        <div className="grid h-[72px] grid-cols-4 gap-2">
-          <Link href={homeHref} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] bg-rose-50 text-[#08132c]" prefetch={false}><Home className="h-6 w-6 fill-current" /><span className="text-xs font-black leading-none">Beranda</span></Link>
-          <Link href={isLoggedIn ? "/user/transaksi" : "/login"} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><History className="h-6 w-6" /><span className="text-xs font-black leading-none">Riwayat</span></Link>
-          <Link href={isLoggedIn ? "/user/saldo" : "/login"} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><WalletCards className="h-6 w-6" /><span className="text-xs font-black leading-none">Saldo</span></Link>
-          <Link href={accountHref} className="flex h-full flex-col items-center justify-center gap-1.5 rounded-[18px] text-[#08132c]" prefetch={false}><UserRound className="h-6 w-6" /><span className="text-xs font-black leading-none">Akun</span></Link>
-        </div>
-      </nav>
+      <RetailBottomNav isLoggedIn={isLoggedIn} />
     </div>
   );
 }

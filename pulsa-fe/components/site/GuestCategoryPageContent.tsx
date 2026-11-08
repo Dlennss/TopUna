@@ -6,7 +6,6 @@ import { getBrandsByKategori } from "@/lib/api.products";
 import type { UserSession } from "@/components/user/types";
 import { GuestBottomNav } from "@/components/guest/GuestBottomNav";
 import { getBrandLogo } from "@/lib/brand-logos";
-import { getGameBrandSlug } from "@/lib/game-brand-routes";
 import { GameCategoryPicker } from "@/components/site/GameCategoryPicker";
 
 type SessionShape = {
@@ -31,14 +30,6 @@ const GAME_BRAND_ORDER: Record<string, number> = {
   roblox: 7,
   "point blank": 8,
 };
-
-const HIDDEN_GAME_BRANDS = new Set([
-  "blood strike",
-  "free fire max",
-  "hago",
-  "honkai star rail",
-  "zepeto",
-]);
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -69,7 +60,7 @@ export async function GuestCategoryPageContent({
 }: GuestCategoryPageContentProps) {
   const session = (await getServerSession(authOptions)) as SessionShape | null;
   const brands = await getBrandsByKategori(kategoriId);
-  const isGameCategory = String(kategoriId) === "5";
+  const isGameCategory = title.trim().toLowerCase() === "game";
 
   if (isGameCategory) {
     return (
@@ -78,13 +69,13 @@ export async function GuestCategoryPageContent({
           <GameCategoryPicker
             title={title}
             items={sortGameBrands(brands)
-              .filter((brand) => brand.aktif !== false && !HIDDEN_GAME_BRANDS.has(normalizeName(brand.nama)))
+              .filter((brand) => brand.aktif !== false)
               .map((brand) => {
                 const logo = getBrandLogo(brand.nama);
                 return {
                   id: brand.id,
                   name: getGameDisplayName(brand.nama),
-                  href: `/game/${getGameBrandSlug(brand.nama)}`,
+                  href: `/kategori/${kategoriId}/brand/${brand.id}`,
                   logo: logo ? { src: logo.src, alt: logo.alt || brand.nama } : null,
                 };
               })}

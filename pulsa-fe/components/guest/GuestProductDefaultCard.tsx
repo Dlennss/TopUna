@@ -50,6 +50,8 @@ export function GuestProductDefaultCard({
               {extractLargeNominalLabel(item)}
             </p>
             <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/55">Token PLN</p>
+            <p className="mt-2 break-words text-xs leading-4">{displayName}</p>
+            <p className="mt-1 break-all font-mono text-[10px]">{item.sku}</p>
           </div>
 
           {hidePrice ? (
@@ -91,6 +93,7 @@ export function GuestProductDefaultCard({
             </h2>
           )}
         </div>
+        <p className="break-all font-mono text-[10px] text-white">{item.sku}</p>
 
         {hidePrice ? (
           <p className="text-right text-[10px] font-medium text-white/75">Biaya admin ditambahkan setelah hasil cek tagihan diterima.</p>

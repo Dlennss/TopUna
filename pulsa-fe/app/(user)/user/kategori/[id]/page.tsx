@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { getAppServerSession } from "@/lib/server-auth";
-import { getBrandsByKategori } from "@/lib/api.products";
-import type { UserSession } from "@/components/user/types";
+import { getBrandsByKategori, getCategories } from "@/lib/api.products";
+import type { UserCategoryItem, UserSession } from "@/components/user/types";
 import { UserBottomNav } from "@/components/user/UserBottomNav";
 import { UserAuthClientSync } from "@/components/user/UserAuthClientSync";
 import { getBrandLogo } from "@/lib/brand-logos";
@@ -20,7 +20,6 @@ type PageProps = {
 };
 
 const UNIVERSAL_SERVICE_BY_CATEGORY_ID: Record<string, string> = {
-  "18": "hp-pascabayar",
   "hp-pascabayar": "hp-pascabayar",
   "esim-roaming": "esim-roaming",
 };
@@ -42,12 +41,14 @@ export default async function UserKategoriPage({ params }: PageProps) {
   }
 
   const brands = await getBrandsByKategori(id);
+  const categories = (await getCategories()) as UserCategoryItem[];
+  const category = categories.find(item => String(item.id) === String(id));
 
   return (
     <main className="min-h-screen bg-sky-50">
       {backendToken ? <UserAuthClientSync backendToken={backendToken} /> : null}
       <div className=" space-y-4 px-4">
-        {String(id) === "1" ? (
+        {category?.nama.trim().toLowerCase() === "pulsa" ? (
           <GuestPulsaQuickOrder
             kategoriId={String(id)}
             brands={brands}

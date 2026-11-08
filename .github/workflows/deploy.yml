@@ -2,8 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -15,73 +14,109 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and Deploy to Server
+    name: Build and Deploy to New Server
     environment: production
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     if: github.ref == 'refs/heads/main'
-
     env:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
-      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       BACKEND_SOURCE_DIR: pulsa-be
       FRONTEND_SOURCE_DIR: pulsa-fe
-      FRONTEND_RELEASE_DIR: topuna/frontend
+      STAGING_DIR: /home/mitra-p24/hit/Topuna/.deploy/staging
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate deployment secrets
+      - name: Validate deployment target and credentials
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         shell: bash
         run: |
           set -euo pipefail
-          required=(
-            SERVER_HOST
-            SERVER_PORT
-            SERVER_USER
-            SERVER_PASSWORD
-          )
-          for name in "${required[@]}"; do
+          for name in SERVER_HOST SERVER_PORT SERVER_USER SERVER_KNOWN_HOSTS; do
             if [ -z "${!name:-}" ]; then
-              echo "::error::$name is empty. Add it in GitHub repository secrets."
+              echo "::error::$name is empty. See ops/DEPLOY.md."
               exit 1
             fi
           done
-          if [ ! -f "${BACKEND_SOURCE_DIR}/go.sum" ]; then
-            echo "::error::BACKEND_SOURCE_DIR must point to the backend folder in this repository, for example: pulsa-be"
+          if [ "$SERVER_HOST" != 103.31.39.97 ] || [ "$SERVER_USER" != root ] || [ "$SERVER_PORT" != 22 ]; then
+            echo "::error::Update secrets for the new server: root@103.31.39.97 port 22. Refusing another target."
             exit 1
           fi
-          if [ ! -f "${FRONTEND_SOURCE_DIR}/package-lock.json" ]; then
-            echo "::error::FRONTEND_SOURCE_DIR must point to the frontend folder in this repository, for example: pulsa-fe"
+          if [ -z "$SERVER_SSH_KEY" ] && [ -z "$SSHPASS" ]; then
+            echo "::error::Set SERVER_SSH_KEY (recommended) or SERVER_PASSWORD for the new server."
             exit 1
           fi
+          test -f "$BACKEND_SOURCE_DIR/go.sum"
+          test -f "$FRONTEND_SOURCE_DIR/package-lock.json"
+
+      - name: Configure verified SSH connection
+        env:
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -F "$SERVER_HOST" -f ~/.ssh/known_hosts > /dev/null
+          {
+            printf 'Host topuna-deploy\n  HostName %s\n  User %s\n  Port %s\n' "$SERVER_HOST" "$SERVER_USER" "$SERVER_PORT"
+            printf '  StrictHostKeyChecking yes\n  UserKnownHostsFile ~/.ssh/known_hosts\n  ConnectTimeout 15\n  ServerAliveInterval 15\n  ServerAliveCountMax 3\n'
+            if [ -n "$SERVER_SSH_KEY" ]; then
+              printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/topuna_deploy
+              chmod 600 ~/.ssh/topuna_deploy
+              printf '  IdentityFile ~/.ssh/topuna_deploy\n  IdentitiesOnly yes\n  BatchMode yes\n'
+            else
+              printf '  PreferredAuthentications password\n  PubkeyAuthentication no\n  NumberOfPasswordPrompts 1\n'
+            fi
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Check new server readiness before building
+        env:
+          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sshpass -e ssh topuna-deploy 'bash -s' < ops/topuna-preflight.sh
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.2"
+          go-version-file: pulsa-be/go.mod
           cache-dependency-path: pulsa-be/go.sum
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20.11.1"
+          node-version: "24"
           cache: npm
           cache-dependency-path: pulsa-fe/package-lock.json
 
-      - name: Build backend
+      - name: Test deployment helper
+        run: python3 -m unittest discover -s ops/tests -v
+
+      - name: Build backend for Linux amd64
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p deploy/backend
+          mkdir -p deploy/backend/sql deploy/ops
+          cp ops/topuna-activate.py ops/topuna-catalog.sh deploy/ops/
           cd "$BACKEND_SOURCE_DIR"
           go mod download
           go test ./...
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../deploy/backend/topuna-api .
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../deploy/backend/apply-sql-migration ./scripts/apply_sql_migration
-          mkdir -p ../deploy/backend/sql
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../deploy/backend/topuna-api .
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../deploy/backend/apply-sql-migration ./scripts/apply_sql_migration
           cp sql/20261007_seed_pulsa24jam_h2hr_dashboard_products.sql ../deploy/backend/sql/
           cp sql/20261007_disable_ambiguous_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql ../deploy/backend/sql/
@@ -94,6 +129,8 @@ jobs:
           cp sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql ../deploy/backend/sql/
           cp sql/20261007_restore_pulsa24jam_open_amount_app_products.sql ../deploy/backend/sql/
           cp sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql ../deploy/backend/sql/
+          cp sql/20261108_refresh_pulsa24jam_h2hr_catalog.sql ../deploy/backend/sql/
+          printf '%s\n' "$GITHUB_SHA" > ../deploy/backend/DEPLOY_COMMIT
 
       - name: Build frontend standalone
         env:
@@ -101,15 +138,16 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://topuna.com
           NEXTAUTH_URL: https://topuna.com
           API_BASE: http://127.0.0.1:8103
+          NEXT_TELEMETRY_DISABLED: "1"
         shell: bash
         run: |
           set -euo pipefail
           cd "$FRONTEND_SOURCE_DIR"
           npm ci
           npm run lint
+          node scripts/check-h2hr-catalog.mjs
           npm run build
           cd ..
-          rm -rf deploy/frontend
           mkdir -p deploy/frontend/.next
           cp -R "$FRONTEND_SOURCE_DIR/.next/standalone/." deploy/frontend/
           cp -R "$FRONTEND_SOURCE_DIR/.next/static" deploy/frontend/.next/static
@@ -118,97 +156,58 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > deploy/frontend/DEPLOY_COMMIT
           printf '%s\n' "$GITHUB_SHA" > deploy/frontend/public/deploy-version.txt
 
-      - name: Install SSH tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y sshpass rsync
-
-      - name: Upload release files
-        shell: bash
+      - name: Upload isolated staging release
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
-
-          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
-            "set -e;
-             mkdir -p \"\$HOME/${BACKEND_RELEASE_DIR}\";
-             mkdir -p \"\$HOME/${FRONTEND_RELEASE_DIR}\""
-
-          sshpass -e rsync -az --delete -e "ssh ${SSH_OPTS}" \
-            deploy/frontend/ "${SERVER_USER}@${SERVER_HOST}:~/${FRONTEND_RELEASE_DIR}/"
-
-          sshpass -e rsync -az -e "ssh ${SSH_OPTS}" \
-            deploy/backend/ "${SERVER_USER}@${SERVER_HOST}:~/${BACKEND_RELEASE_DIR}/"
+          test "$STAGING_DIR" = /home/mitra-p24/hit/Topuna/.deploy/staging
+          sshpass -e ssh topuna-deploy "mkdir -p '$STAGING_DIR'"
+          sshpass -e rsync -az --delete --exclude='.env' --exclude='.env.*' \
+            -e ssh deploy/ "topuna-deploy:$STAGING_DIR/"
 
       - name: Apply Pulsa24Jam catalog safety migrations
-        shell: bash
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
-          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
-            "set -e;
-             sudo -n sh -c 'cd /var/lib/syslog-ng/${BACKEND_RELEASE_DIR};
-               chmod +x ./apply-sql-migration;
-               set -a;
-               . /var/lib/syslog-ng/fadlanpulsa/deployment/topuna/backend.env;
-               set +a;
-               ./apply-sql-migration sql/20261007_disable_ambiguous_open_amount_app_products.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_fixed_nominal_products.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v2.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v3.sql;
-               ./apply-sql-migration sql/20261007_restore_pulsa24jam_open_amount_app_products.sql;
-               ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql;
-               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_dana_fixed_nominal_products.sql;
-               ./apply-sql-migration sql/20261007_hide_low_price_app_products.sql'"
+          sshpass -e ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' before"
 
-      - name: Activate TopUna and verify services
-        shell: bash
+      - name: Activate Topuna and verify local services
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
-            'sudo -n /usr/local/sbin/topuna-activate'
+          sshpass -e ssh topuna-deploy "python3 '$STAGING_DIR/ops/topuna-activate.py'"
 
       - name: Enforce Pulsa24Jam catalog after activation
-        shell: bash
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          SSH_OPTS="-p ${SERVER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          BACKEND_RELEASE_DIR="topuna/${BACKEND_SOURCE_DIR}"
-          sshpass -e ssh ${SSH_OPTS} "${SERVER_USER}@${SERVER_HOST}" \
-            "set -e;
-             sudo -n sh -c 'cd /var/lib/syslog-ng/${BACKEND_RELEASE_DIR};
-               chmod +x ./apply-sql-migration;
-               set -a;
-               . /var/lib/syslog-ng/fadlanpulsa/deployment/topuna/backend.env;
-               set +a;
-               ./apply-sql-migration sql/20261007_enforce_pulsa24jam_app_catalog_safety.sql;
-               ./apply-sql-migration sql/20261007_restore_pulsa24jam_open_amount_app_products.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v2.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_gopay_nominal_dispatch_v3.sql;
-               ./apply-sql-migration sql/20261007_rename_pulsa24jam_product_labels_h2hr.sql;
-               ./apply-sql-migration sql/20261007_quarantine_failed_pulsa24jam_app_products.sql;
-               ./apply-sql-migration sql/20261007_fix_pulsa24jam_dana_fixed_nominal_products.sql;
-               ./apply-sql-migration sql/20261007_hide_low_price_app_products.sql'"
+          sshpass -e ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' after"
 
       - name: Verify public release
         shell: bash
         run: |
           set -euo pipefail
-          actual=$(curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://topuna.com/deploy-version.txt?commit=${GITHUB_SHA}")
-          test "$actual" = "$GITHUB_SHA"
+          for attempt in $(seq 1 12); do
+            actual=$(curl --fail --silent --show-error --connect-timeout 10 --max-time 20 \
+              "https://topuna.com/deploy-version.txt?commit=${GITHUB_SHA}" || true)
+            if [ "$actual" = "$GITHUB_SHA" ]; then
+              echo "Verified public release: $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Public release mismatch. Check topuna.com DNS/reverse proxy points to the new server."
+          exit 1
+
+      - name: Remove runner SSH credentials
+        if: always()
+        shell: bash
+        run: rm -f ~/.ssh/topuna_deploy ~/.ssh/config ~/.ssh/known_hosts

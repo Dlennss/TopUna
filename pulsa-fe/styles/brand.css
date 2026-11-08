@@ -29,9 +29,6 @@ body * { letter-spacing: 0 !important; }
 .brand-categories a { border-radius: 8px; border: 1px solid #efdee4; box-shadow: none; background: white; }
 .brand-categories a > div { border-radius: 8px; box-shadow: none; }
 .brand-categories a { border: 2px solid var(--brand-border); } .brand-categories a:hover { border-color: var(--brand); }
-.brand-bottom-nav { border-radius: 0; border-top: 1px solid #efdee4; box-shadow: 0 -3px 14px #18232d06; }
-.brand-bottom-nav a { border-radius: 8px; }
-.brand-bottom-nav a[class*="#c93450"] { background: #fcf5f7; }
 .brand-retail-main section > div[class*="shadow-"], .brand-retail-main section > a[class*="shadow-"] { box-shadow: none; border-radius: 8px; }
 .brand-retail-main section > div[class*="rounded-"][class*="bg-linear-"] { background-image: none; background-color: white; }
 .brand-retail-main .blur-2xl, .brand-retail-main .blur-3xl { display: none; }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"pulsa2/internal/catalog"
 	"pulsa2/internal/helper"
 	providerpkg "pulsa2/internal/provider"
 	"pulsa2/internal/repository"
@@ -127,6 +128,9 @@ func resolvePulsa24JamAppRequest(providerProductCode string, order *repository.A
 	if order == nil {
 		return providerProductCode, 0
 	}
+	if _, verifiedH2HR := catalog.Lookup(providerProductCode); verifiedH2HR {
+		return providerProductCode, order.Qty
+	}
 	qty := order.Qty
 	if qty <= 0 {
 		qty = 1
@@ -163,6 +167,20 @@ func resolvePulsa24JamAppRequest(providerProductCode string, order *repository.A
 		return providerProductCode, qty
 	}
 	return genericCode, amount
+}
+
+func validateH2HRDispatch(code string, order *repository.AppOrderRow) error {
+	item, allowed := catalog.Lookup(code)
+	if order == nil || !allowed || !strings.EqualFold(strings.TrimSpace(code), order.ProdukSKUSnapshot) {
+		return fmt.Errorf("SKU transaksi tidak cocok dengan katalog H2HR; dispatch dibatalkan")
+	}
+	if item.PriceType == "OPEN_AMOUNT" && (order.Qty <= 0 || order.Qty != order.Nominal) {
+		return fmt.Errorf("nominal transaksi OPEN_AMOUNT tidak cocok; dispatch dibatalkan")
+	}
+	if item.PriceType == "FIXED" && order.Qty != 1 {
+		return fmt.Errorf("jumlah transaksi FIXED tidak valid; dispatch dibatalkan")
+	}
+	return nil
 }
 
 func pulsa24JamGopayNominalSKURequiresAmountQty(sku, name string) bool {
