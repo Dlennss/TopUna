@@ -20,9 +20,10 @@ jobs:
     timeout-minutes: 45
     if: github.ref == 'refs/heads/main'
     env:
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_PORT: ${{ secrets.SERVER_PORT }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
+      # Pin the migrated target; legacy repository/environment secrets are ignored.
+      SERVER_HOST: "103.31.39.97"
+      SERVER_PORT: "22"
+      SERVER_USER: root
       BACKEND_SOURCE_DIR: pulsa-be
       FRONTEND_SOURCE_DIR: pulsa-fe
       STAGING_DIR: /home/mitra-p24/hit/Topuna/.deploy/staging
@@ -45,7 +46,7 @@ jobs:
             fi
           done
           if [ "$SERVER_HOST" != 103.31.39.97 ] || [ "$SERVER_USER" != root ] || [ "$SERVER_PORT" != 22 ]; then
-            echo "::error::Update secrets for the new server: root@103.31.39.97 port 22. Refusing another target."
+            echo "::error::Deployment target must be root@103.31.39.97 port 22. Check the workflow env configuration. Refusing another target."
             exit 1
           fi
           if [ -z "$SERVER_SSH_KEY" ] && [ -z "$SSHPASS" ]; then

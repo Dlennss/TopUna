@@ -1,8 +1,10 @@
 # Deploy Topuna ke server baru
 
 Target: `root@103.31.39.97:22`, aplikasi di
-`/home/mitra-p24/hit/Topuna`. Workflow menolak host/user/port lain agar secrets
-lama tidak membuat deploy kembali ke server sebelumnya.
+`/home/mitra-p24/hit/Topuna`. Host, user, dan port ditetapkan langsung di
+`.github/workflows/deploy.yml`, bukan dibaca dari secrets. Workflow tetap
+menolak target lain. Secrets target lama tidak dapat mengarahkan deploy kembali
+ke server sebelumnya atau menghentikan validasi target baru.
 
 ## GitHub Actions secrets
 
@@ -11,16 +13,18 @@ Environment `production`: nilai di environment mengalahkan repository secrets.
 
 | Secret | Nilai |
 | --- | --- |
-| `SERVER_HOST` | `103.31.39.97` |
-| `SERVER_PORT` | `22` |
-| `SERVER_USER` | `root` |
 | `SERVER_PASSWORD` | Password SSH server **baru**, hanya jika memakai autentikasi password |
 | `SERVER_SSH_KEY` | Opsional: private key khusus deploy; public key harus terpasang pada akun root server baru. Jika diisi, key diprioritaskan daripada password |
 | `SERVER_KNOWN_HOSTS` | Opsional: override baris known_hosts yang sudah diverifikasi. Jika kosong, workflow memakai `ops/ssh/known_hosts` |
 
-`BACKEND_SOURCE_DIR` dan `FRONTEND_RELEASE_DIR` pada screenshot lama **tidak
-dipakai lagi**. Boleh dihapus dari GitHub secrets. Folder source dan staging
-ditentukan di workflow; jangan mengisinya dengan path server lama.
+`SERVER_HOST`, `SERVER_PORT`, `SERVER_USER`, `BACKEND_SOURCE_DIR`, dan
+`FRONTEND_RELEASE_DIR` pada screenshot lama **tidak dipakai lagi**. Boleh
+dihapus dari repository maupun environment secrets. Target, folder source,
+dan staging ditentukan di workflow.
+
+Pastikan `SERVER_PASSWORD` atau `SERVER_SSH_KEY` benar-benar berlaku untuk
+akun root di server baru. Kredensial server lama tidak otomatis berlaku di
+server baru. Jangan memasukkan password atau private key ke dalam workflow.
 
 Public host key server sudah dipin di `ops/ssh/known_hosts`, diverifikasi pada
 8 November 2026 melalui koneksi SSH lokal dengan `StrictHostKeyChecking=yes`.
@@ -50,6 +54,11 @@ source saja belum berarti backend, akun, saldo, atau transaksi sudah dipindah.
 Kegagalan run `42443227258` terjadi sebelum build karena validasi mewajibkan
 `SERVER_KNOWN_HOSTS`. Fallback public key di atas mengatasi kegagalan tersebut;
 preflight tetap menolak aktivasi jika runtime env atau layanan backend belum ada.
+
+Run #54 (`42443701184`) gagal karena secrets host/user/port tidak sesuai target
+baru. Target sekarang dipin di workflow sehingga secrets target lama diabaikan.
+Perubahan workflow harus dipush sebagai commit baru; re-run run lama tetap
+menggunakan konfigurasi commit lama.
 
 Prasyarat: Linux x86_64, Node.js 24 pada `/usr/local/bin/node`, Python 3, rsync,
 systemd. Build dilakukan di runner GitHub, bukan di server aplikasi.
