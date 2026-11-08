@@ -34,7 +34,6 @@ jobs:
 
       - name: Validate deployment target and credentials
         env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
         shell: bash
         run: |
@@ -49,8 +48,8 @@ jobs:
             echo "::error::Deployment target must be root@103.31.39.97 port 22. Check the workflow env configuration. Refusing another target."
             exit 1
           fi
-          if [ -z "$SERVER_SSH_KEY" ] && [ -z "$SSHPASS" ]; then
-            echo "::error::Set SERVER_SSH_KEY (recommended) or SERVER_PASSWORD for the new server."
+          if [ -z "$SERVER_SSH_KEY" ]; then
+            echo "::error::Set SERVER_SSH_KEY in the production environment. This server only accepts public-key authentication; SERVER_PASSWORD cannot be used."
             exit 1
           fi
           test -f "$BACKEND_SOURCE_DIR/go.sum"
@@ -65,7 +64,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y sshpass rsync
+          sudo apt-get install -y rsync
           install -d -m 700 ~/.ssh
           if [ -n "$SERVER_KNOWN_HOSTS" ]; then
             printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
@@ -74,26 +73,33 @@ jobs:
           fi
           chmod 600 ~/.ssh/known_hosts
           ssh-keygen -F "$SERVER_HOST" -f ~/.ssh/known_hosts > /dev/null
+          printf '%s\n' "$SERVER_SSH_KEY" | tr -d '\r' > ~/.ssh/topuna_deploy
+          chmod 600 ~/.ssh/topuna_deploy
+          if ! ssh-keygen -y -P '' -f ~/.ssh/topuna_deploy > /dev/null 2>&1; then
+            echo "::error::SERVER_SSH_KEY must contain a complete, unencrypted OpenSSH private key authorized on the new server."
+            exit 1
+          fi
           {
             printf 'Host topuna-deploy\n  HostName %s\n  User %s\n  Port %s\n' "$SERVER_HOST" "$SERVER_USER" "$SERVER_PORT"
             printf '  StrictHostKeyChecking yes\n  UserKnownHostsFile ~/.ssh/known_hosts\n  ConnectTimeout 15\n  ServerAliveInterval 15\n  ServerAliveCountMax 3\n'
-            if [ -n "$SERVER_SSH_KEY" ]; then
-              printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/topuna_deploy
-              chmod 600 ~/.ssh/topuna_deploy
-              printf '  IdentityFile ~/.ssh/topuna_deploy\n  IdentitiesOnly yes\n  BatchMode yes\n'
-            else
-              printf '  PreferredAuthentications password\n  PubkeyAuthentication no\n  NumberOfPasswordPrompts 1\n'
-            fi
+            printf '  IdentityFile ~/.ssh/topuna_deploy\n  IdentitiesOnly yes\n  BatchMode yes\n  PreferredAuthentications publickey\n  PasswordAuthentication no\n'
           } > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
-      - name: Check new server readiness before building
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
+      - name: Verify SSH key authentication
         shell: bash
         run: |
           set -euo pipefail
-          sshpass -e ssh topuna-deploy 'bash -s' < ops/topuna-preflight.sh
+          if ! ssh topuna-deploy 'true'; then
+            echo "::error::SSH authentication or connection failed. Check the production SERVER_SSH_KEY, its authorized public key on the server, and the verified host key. See SSH output above."
+            exit 1
+          fi
+
+      - name: Check new server readiness before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh topuna-deploy 'bash -s' < ops/topuna-preflight.sh
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -162,39 +168,31 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > deploy/frontend/public/deploy-version.txt
 
       - name: Upload isolated staging release
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
           test "$STAGING_DIR" = /home/mitra-p24/hit/Topuna/.deploy/staging
-          sshpass -e ssh topuna-deploy "mkdir -p '$STAGING_DIR'"
-          sshpass -e rsync -az --delete --exclude='.env' --exclude='.env.*' \
+          ssh topuna-deploy "mkdir -p '$STAGING_DIR'"
+          rsync -az --delete --exclude='.env' --exclude='.env.*' \
             -e ssh deploy/ "topuna-deploy:$STAGING_DIR/"
 
       - name: Apply Pulsa24Jam catalog safety migrations
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
-          sshpass -e ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' before"
+          ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' before"
 
       - name: Activate Topuna and verify local services
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
-          sshpass -e ssh topuna-deploy "python3 '$STAGING_DIR/ops/topuna-activate.py'"
+          ssh topuna-deploy "python3 '$STAGING_DIR/ops/topuna-activate.py'"
 
       - name: Enforce Pulsa24Jam catalog after activation
-        env:
-          SSHPASS: ${{ secrets.SERVER_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
-          sshpass -e ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' after"
+          ssh topuna-deploy "bash '$STAGING_DIR/ops/topuna-catalog.sh' after"
 
       - name: Verify public release
         shell: bash

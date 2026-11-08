@@ -13,18 +13,21 @@ Environment `production`: nilai di environment mengalahkan repository secrets.
 
 | Secret | Nilai |
 | --- | --- |
-| `SERVER_PASSWORD` | Password SSH server **baru**, hanya jika memakai autentikasi password |
-| `SERVER_SSH_KEY` | Opsional: private key khusus deploy; public key harus terpasang pada akun root server baru. Jika diisi, key diprioritaskan daripada password |
+| `SERVER_SSH_KEY` | Wajib: private key OpenSSH khusus deploy tanpa passphrase; public key harus terpasang pada akun root server baru |
 | `SERVER_KNOWN_HOSTS` | Opsional: override baris known_hosts yang sudah diverifikasi. Jika kosong, workflow memakai `ops/ssh/known_hosts` |
 
-`SERVER_HOST`, `SERVER_PORT`, `SERVER_USER`, `BACKEND_SOURCE_DIR`, dan
+`SERVER_PASSWORD`, `SERVER_HOST`, `SERVER_PORT`, `SERVER_USER`, `BACKEND_SOURCE_DIR`, dan
 `FRONTEND_RELEASE_DIR` pada screenshot lama **tidak dipakai lagi**. Boleh
 dihapus dari repository maupun environment secrets. Target, folder source,
 dan staging ditentukan di workflow.
 
-Pastikan `SERVER_PASSWORD` atau `SERVER_SSH_KEY` benar-benar berlaku untuk
-akun root di server baru. Kredensial server lama tidak otomatis berlaku di
-server baru. Jangan memasukkan password atau private key ke dalam workflow.
+Server baru hanya menerima public-key authentication (`PasswordAuthentication
+no`, `PermitRootLogin prohibit-password`, `AuthenticationMethods publickey`).
+Password tidak dapat digunakan untuk deploy. Pada 8 November 2026, key khusus
+GitHub Actions dipasang di server dengan opsi `restrict` (tanpa PTY dan
+forwarding), dan private key disimpan terenkripsi sebagai `SERVER_SSH_KEY`
+pada environment `production`. Key pribadi komputer pengembang tidak diunggah.
+Jangan memasukkan private key ke dalam workflow atau repository.
 
 Public host key server sudah dipin di `ops/ssh/known_hosts`, diverifikasi pada
 8 November 2026 melalui koneksi SSH lokal dengan `StrictHostKeyChecking=yes`.
@@ -59,6 +62,17 @@ Run #54 (`42443701184`) gagal karena secrets host/user/port tidak sesuai target
 baru. Target sekarang dipin di workflow sehingga secrets target lama diabaikan.
 Perubahan workflow harus dipush sebagai commit baru; re-run run lama tetap
 menggunakan konfigurasi commit lama.
+
+Run #55 (`42444061955`) gagal dengan `Permission denied (publickey)` karena
+workflow memakai password pada server yang hanya menerima key. Workflow kini
+mewajibkan private key yang valid, menguji autentikasi SSH secara terpisah,
+dan tidak menggunakan `sshpass` atau secret password lagi. Peringatan runtime
+Node.js pada action checkout bukan penyebab kegagalan autentikasi tersebut.
+Percobaan ulang #55 attempt 2 berhasil melewati autentikasi dari runner GitHub
+setelah secret key dipasang. Run berhenti dengan exit 1 pada preflight karena
+`/etc/topuna/backend.env`, `/etc/topuna/frontend.env`, dan `topuna-be.service`
+belum tersedia; bukan lagi exit 255 dari SSH. Belum ada aktivasi aplikasi atau
+migrasi database pada percobaan ini.
 
 Prasyarat: Linux x86_64, Node.js 24 pada `/usr/local/bin/node`, Python 3, rsync,
 systemd. Build dilakukan di runner GitHub, bukan di server aplikasi.
