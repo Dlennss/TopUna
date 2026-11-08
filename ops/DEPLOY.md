@@ -56,18 +56,59 @@ menegaskan tidak meminta penghapusan database lama. Database PostgreSQL `topuna`
 dibuat dengan role `topuna_app` (bukan superuser), memakai kredensial baru.
 `backend.env` dan `frontend.env` tersedia dengan permission `0600`, root-only.
 Preflight lulus dan smoke test backend pada database baru mengembalikan HTTP 200
-untuk health, kategori, dan produk. Backend utama masih menunggu aktivasi rilis.
+untuk health, kategori, dan produk. Rilis utama kemudian aktif melalui Deploy
+#57, commit `6a6998088b38170c2e9db43da4c31999d5fbfa49`.
 
-Database baru berisi 15.296 produk H2HR, tanpa akun, saldo, rekening, atau
-transaksi contoh. Database aplikasi lain tidak diubah atau dihapus. Tidak ada
-data yang diambil dari server lama. Provider pembayaran dan Google login belum
-dikonfigurasi; jangan menyatakan transaksi siap sampai kredensial asli dipasang.
+Database awal berisi 15.296 produk H2HR, tanpa akun, saldo, rekening, atau
+transaksi contoh. Akun tester kemudian dibuat sesuai permintaan pemilik;
+pengisian saldo tester adalah kredit internal, bukan transfer saldo provider.
+Database aplikasi lain tidak diubah atau dihapus. Tidak ada data yang diambil
+dari server lama. Pada 8 November 2026, kredensial P24 dipasang di
+`/etc/topuna/backend.env` setelah pemeriksaan katalog read-only berhasil.
+Backend direstart dan validasi katalog asli `GOPAY` melalui jalur checkout
+lulus: `OPEN_AMOUNT`, biaya provider Rp1.200 saat diperiksa. Ini bukan bukti
+transaksi berbayar berhasil; tidak ada order atau pembayaran dikirim dalam
+pemeriksaan tersebut. Google login masih belum dikonfigurasi.
 `LEGACY_DEPOSIT_BANK_ENABLED=false` mencegah rekening hardcoded PulsaKilat
 ditanam otomatis. Push perubahan backend ini sebelum deploy berikutnya;
 jangan menjalankan ulang commit lama yang belum mendukung flag tersebut.
 Backup awal tersedia di `/var/backups/topuna/initial-20261108.dump` (root-only).
 Backend smoke test memakai port sementara 18103 dan sudah dihentikan; hasil
-smoke test bukan bukti bahwa rilis baru sudah aktif pada domain publik.
+smoke test awal bukan bukti aktivasi; rilis utama diverifikasi terpisah.
+
+Diagnostik katalog read-only tersedia melalui
+`TestH2HRLiveCatalogReadOnly` di `pulsa-be/internal/service`. Test dilewati
+secara default. Jalankan hanya dengan environment backend yang sudah tersedia
+dan `TOPUNA_P24_READ_ONLY_TEST=1`; jangan menaruh kredensial di source atau
+output log. Test hanya membaca `PRODUK`, tidak membuat atau membayar order.
+
+## Hotfix checkout 8 November 2026
+
+Frontend aktif memakai penanda publik
+`6a6998088b38170c2e9db43da4c31999d5fbfa49-checkout-1794125169697165505`.
+Rilis berada di `.deploy/releases/<penanda>/frontend`. Metadata, diff source,
+dan salinan konfigurasi unit sebelumnya ada di direktori induk rilis.
+Backend dan database tidak diganti saat aktivasi frontend ini.
+
+Build Linux memakai `npm run build -- --webpack`, dengan pemeriksaan tipe
+tetap aktif. Tiga route dashboard lama disesuaikan dengan kontrak PageProps
+Next.js: history admin menunggu `searchParams`, sedangkan halaman deposit
+operator/wallet membungkus komponen bersama tanpa mengekspor props khusus
+sebagai props route. Lint, pemeriksaan tipe lengkap, dan build lulus.
+
+Smoke test pada port sementara 3105 lulus dan unit sementara sudah dihentikan.
+Penanda rilis diverifikasi melalui `https://topuna.com/deploy-version.txt`.
+Pengujian browser pada domain publik mencakup login tester, saldo, checkout
+GoPay, dan layar 320x740, 390x844, 1440x900, serta 390x480. Saldo tester tetap
+Rp62.265; nominal Rp20.000 ditambah biaya Rp1.200 menghasilkan Rp21.200.
+Tidak ada order/pembayaran dikirim dalam pengujian; jumlah order tetap nol
+saat pemeriksaan terakhir. Keberhasilan transaksi provider berbayar belum diuji.
+
+Hotfix ini diaktifkan langsung dari perubahan source lokal, belum melalui
+commit/push baru. Sertakan perubahan source tersebut dalam commit berikutnya
+sebelum menjalankan deploy CI lagi, agar tampilan tidak kembali ke versi lama.
+
+## Inisialisasi Berikutnya
 
 Untuk instalasi kosong berikutnya, setelah unit server disiapkan dan source
 lengkap tersedia, jalankan `sudo python3 ops/topuna-init-database.py` dari repo.

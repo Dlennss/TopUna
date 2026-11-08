@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { LoaderCircle, QrCode, X } from "lucide-react";
+import { AlertCircle, ArrowRight, LoaderCircle, QrCode, RefreshCw, Wallet, X } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { UserAppBillingInquiry, UserAppOrder, UserAppOrderPayment, UserProductItem } from "@/components/user/types";
 import { getRetailFeeForProduct } from "@/lib/retailRoles";
 import { saveGuestTransaction } from "@/lib/guest-transaction-storage";
+import { getBrandLogo } from "@/lib/brand-logos";
 
 type UserCheckoutModalProps = {
   open: boolean;
@@ -219,8 +221,8 @@ function friendlyCheckoutError(error: unknown) {
   if (/produk (?:tidak aktif|tidak tersedia|retail wajib memakai provider Pulsa24Jam)|provider retail tidak valid/i.test(message)) {
     return "Produk ini sudah tidak tersedia untuk pembelian. Muat ulang halaman agar daftar produk memakai katalog Pulsa24Jam terbaru.";
   }
-  if (/pulsa24jam client belum tersedia|koneksi katalog Pulsa24Jam belum dikonfigurasi|PULSA24JAM_.*belum|missing required env: PULSA24JAM/i.test(message)) {
-    return "Koneksi Pulsa24Jam belum aktif. Isi credential Pulsa24Jam di backend dulu agar transaksi bisa dikirim ke provider.";
+  if (/pulsa24jam client belum tersedia|(?:koneksi|verifikasi) katalog (?:Pulsa24Jam|H2HR) belum dikonfigurasi|PULSA24JAM_.*belum|missing required env: PULSA24JAM/i.test(message)) {
+    return "Layanan produk sementara tidak tersedia. Saldo belum dipotong.";
   }
   if (/deposit qris|commands tidak didukung|internal error|\{\s*"?ok"?\s*:/i.test(message)) {
     return "Layanan pembayaran sedang tidak tersedia. Transaksi belum diproses dan saldo Anda tidak terpotong.";
@@ -297,6 +299,8 @@ export function UserCheckoutModal({
   const [payment, setPayment] = React.useState<UserAppOrderPayment | null>(null);
   const [checkoutQris, setCheckoutQris] = React.useState<CheckoutQrisItem | null>(null);
   const [retailSaldo, setRetailSaldo] = React.useState<number | null>(null);
+  const [balanceError, setBalanceError] = React.useState(false);
+  const [balanceReload, reloadBalance] = React.useReducer((value) => value + 1, 0);
   const [guestTurnstileToken, setGuestTurnstileToken] = React.useState("");
   const [waitingTurnstile, setWaitingTurnstile] = React.useState(false);
   const [turnstileError, setTurnstileError] = React.useState<string | null>(null);
@@ -305,9 +309,24 @@ export function UserCheckoutModal({
   const [, forceTick] = React.useReducer((v) => v + 1, 0);
   const refundRecoveryAttemptedRef = React.useRef(false);
   const checkoutQrisCompletingRef = React.useRef(false);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const errorRef = React.useRef<HTMLDivElement>(null);
   const effectiveAuthToken = authToken?.trim() || "";
   const activeTurnstileToken = turnstileToken || guestTurnstileToken;
   const guestNeedsTurnstile = !effectiveAuthToken && TURNSTILE_ENABLED && Boolean(TURNSTILE_SITE_KEY);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement;
+    dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => {
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, [open]);
+
+  React.useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: "nearest" });
+  }, [error]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -320,6 +339,7 @@ export function UserCheckoutModal({
     setPayment(null);
     setCheckoutQris(null);
     setRetailSaldo(null);
+    setBalanceError(false);
     setGuestTurnstileToken("");
     setWaitingTurnstile(false);
     setTurnstileError(null);
@@ -334,19 +354,22 @@ export function UserCheckoutModal({
 
     let cancelled = false;
     const loadSaldo = async () => {
+      setRetailSaldo(null);
+      setBalanceError(false);
       try {
         const profileRes = await fetch("/api/me/profile", {
           method: "GET",
           headers: { Authorization: `Bearer ${effectiveAuthToken}` },
+          cache: "no-store",
         });
         const profileJson = (await profileRes.json().catch(() => ({}))) as { ok?: boolean; profile?: { saldo?: number } };
-        if (!cancelled) {
-          setRetailSaldo(profileRes.ok && profileJson.ok ? Number(profileJson.profile?.saldo || 0) : 0);
+        const balance = profileJson.profile?.saldo;
+        if (!profileRes.ok || !profileJson.ok || balance == null || !Number.isFinite(Number(balance)) || Number(balance) < 0) {
+          throw new Error("Balance unavailable");
         }
+        if (!cancelled) setRetailSaldo(Number(balance));
       } catch {
-        if (!cancelled) {
-          setRetailSaldo(0);
-        }
+        if (!cancelled) setBalanceError(true);
       }
     };
 
@@ -354,23 +377,20 @@ export function UserCheckoutModal({
     return () => {
       cancelled = true;
     };
-  }, [open, effectiveAuthToken]);
+  }, [open, effectiveAuthToken, product?.id, balanceReload]);
 
   React.useEffect(() => {
     if (!open) return;
 
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
-    const prevBodyTouchAction = document.body.style.touchAction;
 
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
 
     return () => {
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
-      document.body.style.touchAction = prevBodyTouchAction;
     };
   }, [open, initialDest]);
 
@@ -422,7 +442,8 @@ export function UserCheckoutModal({
   const walletSaldo = Math.max(0, retailSaldo || 0);
   const estimatedWalletDebit = effectiveAuthToken ? Math.min(hargaSebelumFeeAdmin, walletSaldo) : 0;
   const estimatedQrisAmount = effectiveAuthToken ? Math.max(hargaSebelumFeeAdmin - estimatedWalletDebit, 0) : 0;
-  const needsTopup = Boolean(effectiveAuthToken) && estimatedQrisAmount > 0;
+  const balanceLoading = Boolean(effectiveAuthToken) && retailSaldo === null && !balanceError;
+  const needsTopup = Boolean(effectiveAuthToken) && retailSaldo !== null && estimatedQrisAmount > 0;
   const feeAdminQris = 0;
   const totalBayar = hargaSebelumFeeAdmin;
   const ewalletProduct = isEwalletProduct(product);
@@ -517,6 +538,10 @@ export function UserCheckoutModal({
     const currentProduct = product;
     if (!currentProduct) return;
     setError(null);
+    if (effectiveAuthToken && retailSaldo === null) {
+      setError("Saldo belum dapat diperiksa. Silakan muat ulang saldo.");
+      return;
+    }
 
     const cleanDest = dest.trim();
     const cleanServer = destServer.trim();
@@ -938,23 +963,37 @@ export function UserCheckoutModal({
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/40 px-4 py-6">
-      <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-[28px] bg-white p-5 shadow-[0_18px_46px_rgba(15,23,42,0.24)] md:w-97.5 md:max-w-none">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Checkout</p>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">{product.nama}</h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3 sm:p-6">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="checkout-title" onKeyDown={(event) => {
+        if (event.key === "Escape" && !loading) { event.stopPropagation(); onClose(); }
+        if (event.key !== "Tab") return;
+        const elements = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href], [tabindex="0"]') || []).filter((element) => element.getClientRects().length > 0);
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }} className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-md flex-col overflow-hidden rounded-lg bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]">
+        <div className="flex shrink-0 items-start gap-3 border-b border-slate-100 px-5 py-4">
+          {getBrandLogo(product.brand_nama || "") ? (
+            <Image src={getBrandLogo(product.brand_nama || "")!.src} alt={getBrandLogo(product.brand_nama || "")!.alt} width={40} height={40} className="mt-1 h-10 w-10 shrink-0 object-contain" />
+          ) : <Wallet className="mt-1 h-8 w-8 shrink-0 text-[#d30940]" />}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-slate-500">Konfirmasi pembelian</p>
+            <h2 id="checkout-title" className="mt-1 break-words text-base font-bold leading-6 text-slate-950">{product.nama}</h2>
+            <p className="mt-1 break-all text-xs text-slate-500">{product.sku}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-500"
+            disabled={loading}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-slate-500 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-[#d30940]"
             aria-label="Tutup modal"
+            title="Tutup"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-4">
         {payment && order ? (
           <div className="mt-5 space-y-4">
             {showQRCode ? (
@@ -1117,10 +1156,10 @@ export function UserCheckoutModal({
             </div>
           </div>
         ) : (
-          <form id="guest-checkout-form" onSubmit={handleSubmit} className="mt-5 space-y-4">
-            <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-600">
+          <form id="guest-checkout-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="order-3 border-y border-slate-100 py-4 text-sm text-slate-600">
               {isBillingPayment && billingInquiry ? (
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <div className="mb-3 border-b border-slate-100 pb-3">
                   <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{billingDetailConfig.title}</p>
                   {billingInquiry.customer_name ? (
                     <div className="mt-2 flex items-center justify-between gap-3">
@@ -1172,7 +1211,7 @@ export function UserCheckoutModal({
                   </div>
                 </div>
               ) : null}
-              {shouldShowSummaryPrimaryRow(product) ? (
+              {!ewalletProduct && shouldShowSummaryPrimaryRow(product) ? (
                 <div className={`${isBillingPayment && billingInquiry ? "mt-3" : ""} flex items-center justify-between gap-3`}>
                   <span>{isBillingPayment ? "Total tagihan" : getSummaryPrimaryLabel(product)}</span>
                   <span className="font-semibold text-slate-900">
@@ -1187,12 +1226,12 @@ export function UserCheckoutModal({
                 </div>
               ) : ewalletProduct ? (
                 <>
-                  <div className="mt-2 flex items-center justify-between gap-3">
+                  {ewalletNominal > 0 ? <div className="mt-2 flex items-center justify-between gap-3">
                     <span>Nominal masuk ke {product.brand_nama || "e-wallet"}</span>
                     <span className="font-semibold text-slate-900">{formatRupiah(ewalletNominal)}</span>
-                  </div>
+                  </div> : null}
                   <div className="mt-2 flex items-center justify-between gap-3">
-                    <span>Biaya layanan</span>
+                    <span>{ewalletNominal > 0 ? "Biaya layanan" : "Harga produk"}</span>
                     <span className="font-semibold text-slate-900">{formatRupiah(ewalletServiceFee)}</span>
                   </div>
                 </>
@@ -1202,12 +1241,6 @@ export function UserCheckoutModal({
                   <span className="font-semibold text-slate-900">{hargaSebelumFeeAdmin > 0 ? formatRupiah(hargaSebelumFeeAdmin) : "-"}</span>
                 </div>
               )}
-              {estimatedWalletDebit > 0 ? (
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <span>Dibayar dari saldo utama</span>
-                  <span className="font-semibold text-slate-900">{formatRupiah(estimatedWalletDebit)}</span>
-                </div>
-              ) : null}
               {needsTopup ? (
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <span>Kekurangan saldo utama</span>
@@ -1220,18 +1253,13 @@ export function UserCheckoutModal({
                   <span className="font-semibold text-slate-900">{formatRupiah(feeAdminQris)}</span>
                 </div>
               ) : null}
-              <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                 <span>Total bayar</span>
-                <span className="font-semibold text-sky-700">{formatRupiah(totalBayar)}</span>
+                <span className="text-base font-bold tabular-nums text-slate-950">{formatRupiah(totalBayar)}</span>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-900">
-              Transaksi hanya diproses setelah tombol Bayar ditekan. Total di atas adalah biaya yang dikenakan untuk
-              transaksi ini; tidak ada biaya tersembunyi atau langganan otomatis.
-            </div>
-
-            <label className="block space-y-2 text-sm">
+            <label className="order-1 block space-y-2 text-sm">
               <span className="font-semibold text-slate-700">{destLabel}</span>
                   {destMode === "ml_id_server" ? (
                     <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
@@ -1242,16 +1270,17 @@ export function UserCheckoutModal({
                         type="tel"
                         inputMode="numeric"
                         maxLength={15}
-                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-base text-slate-900 outline-none ring-0 transition focus:border-sky-300"
+                        className="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-[#d30940] focus:ring-2 focus:ring-rose-100"
                       />
                       <input
                         value={destServer}
                         onChange={(e) => setDestServer(normalizeServerInput(e.target.value, 6))}
                         placeholder="Server"
+                        aria-label="Server"
                         type="tel"
                         inputMode="numeric"
                         maxLength={6}
-                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-base text-slate-900 outline-none ring-0 transition focus:border-sky-300"
+                        className="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-[#d30940] focus:ring-2 focus:ring-rose-100"
                       />
                     </div>
                   ) : (
@@ -1265,26 +1294,30 @@ export function UserCheckoutModal({
                     autoCorrect={destMode === "alphanumeric" ? "off" : undefined}
                     spellCheck={destMode === "alphanumeric" ? false : undefined}
                     maxLength={destMode === "alphanumeric" ? 32 : 13}
-                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-base text-slate-900 outline-none ring-0 transition focus:border-sky-300"
+                    className="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 outline-none transition focus:border-[#d30940] focus:ring-2 focus:ring-rose-100"
                   />
                   )}
                 </label>
 
             {!isFixed && !isBillingPayment ? (
-              <label className="block space-y-2 text-sm">
+              <label className="order-2 block space-y-2 text-sm">
                 <span className="font-semibold text-slate-700">Nominal</span>
+                <div className="flex h-12 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 focus-within:border-[#d30940] focus-within:ring-2 focus-within:ring-rose-100">
+                  <span aria-hidden="true" className="text-slate-500">Rp</span>
                   <input
-                    value={nominal}
+                    value={nominal ? Number(nominal).toLocaleString("id-ID") : ""}
                     onChange={(e) => setNominal(e.target.value.replace(/[^\d]/g, ""))}
-                    placeholder="Contoh: 10000"
+                    placeholder="0"
                     inputMode="numeric"
-                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-base text-slate-900 outline-none ring-0 transition focus:border-sky-300"
+                    maxLength={16}
+                    className="min-w-0 flex-1 bg-transparent text-base tabular-nums text-slate-900 outline-none"
                   />
+                </div>
                 </label>
             ) : null}
 
             {!effectiveAuthToken && guestNeedsTurnstile && (waitingTurnstile || turnstileError) ? (
-              <div className="space-y-3">
+              <div className="order-5 space-y-3">
                 <TurnstileWidget
                   key={`${turnstileAppearance}-${waitingTurnstile}-${turnstileError ? "error" : "ready"}`}
                   siteKey={TURNSTILE_SITE_KEY}
@@ -1308,15 +1341,29 @@ export function UserCheckoutModal({
               </div>
             ) : null}
 
+            {effectiveAuthToken ? (
+              <div className="order-4 flex items-center gap-3 text-sm">
+                <Wallet className="h-5 w-5 shrink-0 text-[#d30940]" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-slate-900">Saldo Topuna</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{balanceLoading ? "Memuat saldo..." : balanceError ? "Saldo belum dapat dimuat" : "Saldo tersedia"}</p>
+                </div>
+                {balanceError ? <button type="button" onClick={reloadBalance} aria-label="Muat ulang saldo" title="Muat ulang saldo" className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-slate-200"><RefreshCw className="h-4 w-4" /></button> : balanceLoading ? <LoaderCircle className="h-4 w-4 animate-spin text-slate-400" /> : <strong className="shrink-0 tabular-nums text-slate-950">{formatRupiah(walletSaldo)}</strong>}
+              </div>
+            ) : null}
             {needsTopup ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="order-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
                 Saldo utama tidak mencukupi. Isi saldo sebesar {formatRupiah(estimatedQrisAmount)} untuk melanjutkan {ewalletProduct ? `top up ${product.brand_nama || "e-wallet"}` : "transaksi"}.
               </div>
             ) : null}
-            {error ? <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-            {turnstileHint ? <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-700">{turnstileHint}</div> : null}
-            {turnstileError ? <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-700">{turnstileError}</div> : null}
-
+            {error ? <div ref={errorRef} role="alert" className="order-5 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-3 text-sm leading-5 text-rose-800"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div> : null}
+            {turnstileHint ? <div role="status" className="order-5 rounded-lg border border-sky-100 bg-sky-50 px-3 py-3 text-sm text-sky-700">{turnstileHint}</div> : null}
+            {turnstileError ? <div role="alert" className="order-5 rounded-lg border border-amber-100 bg-amber-50 px-3 py-3 text-sm text-amber-700">{turnstileError}</div> : null}
+          </form>
+        )}
+        </div>
+        {!payment || !order ? (
+          <div className="shrink-0 border-t border-slate-100 bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {needsTopup ? (
               <button
                 type="button"
@@ -1324,22 +1371,24 @@ export function UserCheckoutModal({
                   onClose();
                   router.push(`/user/account/topup?amount=${Math.ceil(estimatedQrisAmount)}`);
                 }}
-                className="inline-flex h-13 w-full items-center justify-center rounded-2xl bg-[#c93450] px-5 text-xs font-black text-white shadow-[0_10px_20px_rgba(4,120,87,0.22)] transition hover:bg-[#036b4d]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#d30940] px-4 text-sm font-bold text-white transition hover:bg-[#b90837]"
               >
-                Isi Saldo
+                <Wallet className="h-4 w-4" /> Isi Saldo
               </button>
             ) : (
               <button
                 type="submit"
-                disabled={loading}
-                className="inline-flex h-13 w-full items-center justify-center rounded-2xl bg-[#651e34] px-11 text-xs font-black text-white shadow-[0_10px_20px_rgba(5,46,38,0.18)] transition group-hover:bg-[#c93450]"
+                form="guest-checkout-form"
+                disabled={loading || balanceLoading || (Boolean(effectiveAuthToken) && balanceError) || totalBayar <= 0}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#d30940] px-4 text-sm font-bold text-white transition hover:bg-[#b90837] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                {loading ? "Memproses..." : "Bayar"}
+                {loading ? "Memproses..." : balanceLoading ? "Memuat saldo..." : `Bayar ${formatRupiah(totalBayar)}`}
+                {!loading && !balanceLoading ? <ArrowRight className="h-4 w-4 shrink-0" /> : null}
               </button>
             )}
-          </form>
-        )}
+          </div>
+        ) : null}
       </div>
     </div>
   );
