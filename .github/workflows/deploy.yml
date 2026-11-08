@@ -35,11 +35,10 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SERVER_PASSWORD }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
         shell: bash
         run: |
           set -euo pipefail
-          for name in SERVER_HOST SERVER_PORT SERVER_USER SERVER_KNOWN_HOSTS; do
+          for name in SERVER_HOST SERVER_PORT SERVER_USER; do
             if [ -z "${!name:-}" ]; then
               echo "::error::$name is empty. See ops/DEPLOY.md."
               exit 1
@@ -55,6 +54,7 @@ jobs:
           fi
           test -f "$BACKEND_SOURCE_DIR/go.sum"
           test -f "$FRONTEND_SOURCE_DIR/package-lock.json"
+          test -s ops/ssh/known_hosts
 
       - name: Configure verified SSH connection
         env:
@@ -66,7 +66,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass rsync
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          if [ -n "$SERVER_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            cp ops/ssh/known_hosts ~/.ssh/known_hosts
+          fi
           chmod 600 ~/.ssh/known_hosts
           ssh-keygen -F "$SERVER_HOST" -f ~/.ssh/known_hosts > /dev/null
           {

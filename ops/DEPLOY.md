@@ -16,29 +16,40 @@ Environment `production`: nilai di environment mengalahkan repository secrets.
 | `SERVER_USER` | `root` |
 | `SERVER_PASSWORD` | Password SSH server **baru**, hanya jika memakai autentikasi password |
 | `SERVER_SSH_KEY` | Opsional: private key khusus deploy; public key harus terpasang pada akun root server baru. Jika diisi, key diprioritaskan daripada password |
-| `SERVER_KNOWN_HOSTS` | Wajib: baris known_hosts server baru yang sudah diverifikasi, bukan private key |
+| `SERVER_KNOWN_HOSTS` | Opsional: override baris known_hosts yang sudah diverifikasi. Jika kosong, workflow memakai `ops/ssh/known_hosts` |
 
 `BACKEND_SOURCE_DIR` dan `FRONTEND_RELEASE_DIR` pada screenshot lama **tidak
 dipakai lagi**. Boleh dihapus dari GitHub secrets. Folder source dan staging
 ditentukan di workflow; jangan mengisinya dengan path server lama.
 
-Ambil host public key melalui koneksi SSH yang sudah dipercaya atau console VPS:
+Public host key server sudah dipin di `ops/ssh/known_hosts`, diverifikasi pada
+8 November 2026 melalui koneksi SSH lokal dengan `StrictHostKeyChecking=yes`.
+Ini public key identitas server, bukan private key atau kredensial login.
+Secret `SERVER_KNOWN_HOSTS` tidak perlu ditambahkan untuk server ini.
+
+Jika server diinstal ulang atau host key dirotasi, ambil host public key melalui
+koneksi SSH yang sudah dipercaya atau console VPS:
 
 ```sh
 ssh root@103.31.39.97 'cat /etc/ssh/ssh_host_ed25519_key.pub'
 ```
 
-Isi `SERVER_KNOWN_HOSTS` dengan `103.31.39.97`, spasi, lalu jenis dan nilai public
+Perbarui `ops/ssh/known_hosts` atau isi override `SERVER_KNOWN_HOSTS` dengan
+`103.31.39.97`, spasi, lalu jenis dan nilai public
 key tersebut, misalnya `103.31.39.97 ssh-ed25519 AAAA...`. Verifikasi fingerprint
 melalui console VPS bila server belum dipercaya. Workflow tidak menonaktifkan
 host-key checking dan tidak mengambil key secara buta saat deploy.
 
 ## Persiapan sekali di server
 
-Pemeriksaan pada 7 November 2026 menemukan frontend `topuna-web.service` sudah
+Pemeriksaan ulang pada 8 November 2026 menemukan frontend `topuna-web.service` sudah
 aktif di port 3103. Backend `topuna-be.service` dan `/etc/topuna` belum tersedia.
 Workflow sengaja berhenti pada preflight sampai prasyarat ini lengkap; upload
 source saja belum berarti backend, akun, saldo, atau transaksi sudah dipindah.
+
+Kegagalan run `42443227258` terjadi sebelum build karena validasi mewajibkan
+`SERVER_KNOWN_HOSTS`. Fallback public key di atas mengatasi kegagalan tersebut;
+preflight tetap menolak aktivasi jika runtime env atau layanan backend belum ada.
 
 Prasyarat: Linux x86_64, Node.js 24 pada `/usr/local/bin/node`, Python 3, rsync,
 systemd. Build dilakukan di runner GitHub, bukan di server aplikasi.
