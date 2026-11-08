@@ -6,6 +6,24 @@ Target: `root@103.31.39.97:22`, aplikasi di
 menolak target lain. Secrets target lama tidak dapat mengarahkan deploy kembali
 ke server sebelumnya atau menghentikan validasi target baru.
 
+## Pembaruan katalog e-wallet 8 November 2026
+
+Frontend aktif diperbarui melalui rilis manual
+`832f02d31d9c7b5b47dbe8be675becd30df359cd-catalog-1794150558534796682`.
+Tab memakai `group_name` H2HR, dengan PPOB sebelum PULSA. Nama, SKU, harga,
+dan status aktif produk tidak diubah. Produk nominal bebas menampilkan biaya
+layanan, bukan harga Rp0. Backend, database, dan saldo tidak diubah oleh rilis ini.
+
+Saat verifikasi, `PPOBGOPAY` aktif; `GOPAY` berstatus
+`PULSA24JAM_OUT_OF_STOCK` dan tetap tersembunyi. Jangan mengaktifkannya hanya
+untuk menyamai jumlah kartu pada contoh. Uji browser tamu/pengguna dan ukuran
+320/390/1440 lulus, termasuk checkout nominal 20.000 dengan total 21.200.
+Uji domain publik dilakukan tanpa membuat pesanan atau pembayaran.
+
+Rilis menyimpan `source.tgz`, `source.diff`, dan `metadata.json` di direktori
+rilis, serta konfigurasi frontend sebelumnya untuk pemulihan. Perubahan kode
+lokal perlu dikomit dan dipush agar deploy CI berikutnya mempertahankan perbaikan.
+
 ## GitHub Actions secrets
 
 Atur di Settings > Secrets and variables > Actions. Periksa juga secrets pada

@@ -74,29 +74,25 @@ function UserProductCard({
           onBuy(item);
         }}
         disabled={!canBuy}
-        className="group relative min-h-44 rounded-lg border border-rose-100 bg-white p-3 text-left transition-colors hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+        title={item.nama}
+        className="group grid min-h-60 grid-rows-[auto_1fr_auto] gap-3 rounded-lg border border-slate-200 border-t-4 border-t-[#d30940] bg-white p-3 text-left transition-colors hover:border-rose-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d30940] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <div className="relative flex h-full min-h-30 flex-col justify-between gap-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="break-all font-mono text-[10px] text-slate-500">{item.sku}</p>
-              <p className="mt-2 break-words text-sm font-bold leading-5 text-slate-950">
-                {nominalLabel}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
+        <p className="text-[10px] font-bold uppercase text-[#d30940]">Nominal top up</p>
+        <div className="min-w-0">
+          <p className="line-clamp-3 break-words text-base font-bold leading-5 text-slate-950">{nominalLabel}</p>
+          <p className="mt-2 break-all font-mono text-[10px] text-slate-500">{item.sku}</p>
+        </div>
+        <div className="space-y-3">
             <div>
-              <p className="text-[11px] leading-4 text-slate-500">{brandLabel} - {isFixed ? "Harga tetap" : "Biaya tambahan"}</p>
-              <p className="text-sm font-black text-[#651e34]">
-                {canBuy ? `${isFixed ? "" : "+ "}${formatRupiah(finalPrice)}` : (buyBlockedLabel || "Lengkapi dulu")}
+              <p className="text-[11px] leading-4 text-slate-500">Top up {brandLabel}</p>
+              <p className="text-sm font-bold text-slate-950">
+                {canBuy ? (isFixed ? formatRupiah(finalPrice) : "Nominal bebas") : (buyBlockedLabel || "Lengkapi dulu")}
               </p>
+              {!isFixed && canBuy ? <p className="mt-1 text-[11px] leading-4 text-slate-600">Biaya layanan {formatRupiah(finalPrice)}</p> : null}
             </div>
-            <span className="inline-flex h-8 w-full items-center justify-center rounded-md bg-[#c93450] px-3 text-xs font-bold text-white">
+            <span className="inline-flex h-9 w-full items-center justify-center rounded-md bg-[#d30940] px-3 text-xs font-bold text-white">
               {canBuy ? (buyLabel || "Top Up") : (buyBlockedLabel || "Lengkapi dulu")}
             </span>
-          </div>
         </div>
       </button>
     );

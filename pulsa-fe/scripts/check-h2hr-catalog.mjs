@@ -23,6 +23,21 @@ assert.equal(getCatalogCategoryKind('Paket Data'), 'data');
 assert.equal(getCatalogCategoryKind('Tagihan Air'), 'billing');
 const { getDisplayProductName, getProductPricing } = loadTS('components/guest/product-card-shared.tsx');
 const snapshot = JSON.parse(fs.readFileSync(path.join(root, '../pulsa-be/internal/catalog/pulsa24jam_h2hr.json'), 'utf8'));
+const { buildEwalletGroups } = loadTS('lib/ewallet-catalog.ts');
+const walletItems = snapshot.Products.filter(p => p.Category === 'E-Wallet' && p.Brand === 'GOPAY').map((p, id) => ({
+  id, sku: p.SKU, nama: p.Name, group_name: p.GroupName, tipe_harga: p.PriceType,
+  harga_dasar_app: p.Price, aktif: true,
+}));
+const walletBefore = JSON.stringify(walletItems);
+const walletGroups = buildEwalletGroups(walletItems);
+assert.deepEqual(Array.from(walletGroups, g => g.key), ['PPOB', 'PULSA']);
+assert.deepEqual(Array.from(walletGroups[0].items, p => p.sku).sort(), ['GOPAY', 'PPOBGOPAY']);
+assert.ok(walletGroups[1].items.some(p => p.sku === 'GPYOPEN' && p.tipe_harga === 'OPEN_AMOUNT'));
+assert.equal(JSON.stringify(walletItems), walletBefore, 'Grouping must not change provider products or prices');
+assert.equal(buildEwalletGroups([{ ...walletItems[0], aktif: false }]).length, 0);
+assert.equal(buildEwalletGroups([{ ...walletItems[0], sku: 'CEKGOPAY' }]).length, 0);
+assert.equal(buildEwalletGroups([{ ...walletItems[0], group_name: '' }])[0].key, 'LAINNYA');
+assert.equal(buildEwalletGroups([]).length, 0);
 assert.equal(snapshot.Products.length, 15296);
 for (const product of snapshot.Products) {
   assert.equal(getDisplayProductName({ nama: product.Name, kategori_nama: product.Category, brand_nama: product.Brand }), product.Name);
