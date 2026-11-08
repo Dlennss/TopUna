@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"os"
 	"strings"
 )
 
@@ -26,6 +27,9 @@ func NewBankRepository(db *sql.DB) *BankRepository {
 // EnsurePulsaKilatDepositBank keeps the public deposit account available after
 // deployment, including installations where SQL migrations are applied later.
 func (r *BankRepository) EnsurePulsaKilatDepositBank(ctx context.Context) error {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("LEGACY_DEPOSIT_BANK_ENABLED")), "false") {
+		return nil
+	}
 	if r == nil || r.db == nil {
 		return errors.New("bank repository belum dikonfigurasi")
 	}

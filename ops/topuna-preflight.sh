@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-fail() { echo "Topuna preflight: $*" >&2; exit 1; }
+report() { printf '::error title=Topuna server setup::%s\n' "$*" >&2; }
+fail() { report "$*"; exit 1; }
 root=/home/mitra-p24/hit/Topuna
 [[ $(id -u) = 0 ]] || fail 'SSH user must be root.'
 [[ $(uname -m) = x86_64 ]] || fail 'Expected the new x86_64 server.'
@@ -15,13 +16,13 @@ done
 missing=0
 for file in /etc/topuna/backend.env /etc/topuna/frontend.env; do
   if [[ ! -s "$file" ]]; then
-    echo "Topuna preflight: missing runtime configuration $file" >&2
+    report "Missing runtime configuration $file. Supply the production configuration; do not use an empty file or .env.example."
     missing=1
   fi
 done
 for service in topuna-be topuna-web; do
   if [[ $(systemctl show "$service" -p LoadState --value) != loaded ]]; then
-    echo "Topuna preflight: missing systemd service $service" >&2
+    report "Missing systemd service $service. Complete the one-time service setup in ops/DEPLOY.md."
     missing=1
   fi
 done

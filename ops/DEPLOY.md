@@ -49,10 +49,32 @@ host-key checking dan tidak mengambil key secara buta saat deploy.
 
 ## Persiapan sekali di server
 
-Pemeriksaan ulang pada 8 November 2026 menemukan frontend `topuna-web.service` sudah
-aktif di port 3103. Backend `topuna-be.service` dan `/etc/topuna` belum tersedia.
-Workflow sengaja berhenti pada preflight sampai prasyarat ini lengkap; upload
-source saja belum berarti backend, akun, saldo, atau transaksi sudah dipindah.
+Pada 8 November 2026, frontend `topuna-web.service` tetap aktif di port 3103.
+Unit `topuna-be.service`, akun layanan `topuna`, `/var/lib/topuna`, dan direktori
+`/etc/topuna` sudah disiapkan. Pengguna kemudian memilih database baru dan
+menegaskan tidak meminta penghapusan database lama. Database PostgreSQL `topuna`
+dibuat dengan role `topuna_app` (bukan superuser), memakai kredensial baru.
+`backend.env` dan `frontend.env` tersedia dengan permission `0600`, root-only.
+Preflight lulus dan smoke test backend pada database baru mengembalikan HTTP 200
+untuk health, kategori, dan produk. Backend utama masih menunggu aktivasi rilis.
+
+Database baru berisi 15.296 produk H2HR, tanpa akun, saldo, rekening, atau
+transaksi contoh. Database aplikasi lain tidak diubah atau dihapus. Tidak ada
+data yang diambil dari server lama. Provider pembayaran dan Google login belum
+dikonfigurasi; jangan menyatakan transaksi siap sampai kredensial asli dipasang.
+`LEGACY_DEPOSIT_BANK_ENABLED=false` mencegah rekening hardcoded PulsaKilat
+ditanam otomatis. Push perubahan backend ini sebelum deploy berikutnya;
+jangan menjalankan ulang commit lama yang belum mendukung flag tersebut.
+Backup awal tersedia di `/var/backups/topuna/initial-20261108.dump` (root-only).
+Backend smoke test memakai port sementara 18103 dan sudah dihentikan; hasil
+smoke test bukan bukti bahwa rilis baru sudah aktif pada domain publik.
+
+Untuk instalasi kosong berikutnya, setelah unit server disiapkan dan source
+lengkap tersedia, jalankan `sudo python3 ops/topuna-init-database.py` dari repo.
+Script hanya mendukung database baru `topuna`, menolak database/role/env yang
+sudah ada, dan tidak pernah menjalankan DROP DATABASE. Skema diuji melalui
+`ops/topuna-fresh.sql` dan CI. Jika inisialisasi terhenti, periksa penyebabnya;
+jangan menghapus database atau env untuk memaksa skrip berjalan ulang.
 
 Kegagalan run `42443227258` terjadi sebelum build karena validasi mewajibkan
 `SERVER_KNOWN_HOSTS`. Fallback public key di atas mengatasi kegagalan tersebut;
