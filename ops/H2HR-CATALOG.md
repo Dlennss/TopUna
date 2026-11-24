@@ -45,6 +45,28 @@ Backup sebelum perubahan berada di server pada
 dan mapping. Pulihkan hanya baris yang relevan setelah review, bukan menimpa
 seluruh tabel yang mungkin sudah diperbarui sinkronisasi.
 
+## Audit transaksi PKA9 dan parser status
+
+Pada 24 November 2026, transaksi GOPAY `PKA9` senilai 60.000 ditolak P24
+dengan status numerik 3 dan pesan "Transaksi gagal". Debit 61.200 direfund
+penuh; produk kembali dikarantina. Pemeriksaan read-only SALDO menunjukkan
+62.265 dan PRODUK mengembalikan SKU GOPAY, OPEN_AMOUNT, fee_tambahan 1.200.
+Pengecekan STATUS-PAY dengan refid saja ditolak HTTP 400, "product required";
+tidak ada PAY ulang atau percobaan format transaksi spekulatif.
+
+Adapter diperbaiki agar status numerik tidak hilang ketika dibaca sebagai teks.
+Tes transport lokal mencakup nominal 20.000/60.000, URL v2, SKU, tujuan,
+refid, kredensial dummy, status angka/teks, dan redaksi PIN. `go test ./...`
+lulus. Ini perbaikan pembacaan respons, bukan bukti penyebab penolakan P24.
+Status 3 tetap gagal; harga, saldo, routing, dan karantina tidak diubah.
+
+Backend aktif memakai rilis manual
+`manual-p24-status-1795523625453834506`, berbasis commit
+`2630598b637f9f9f16650edfe6e7c5fa029fca23`. Rilis menyimpan perubahan source,
+checksum binary, metadata, dan drop-in sebelumnya untuk rollback. Frontend
+tidak diganti. Keberhasilan pembelian belum terverifikasi; perlu kontrak API
+H2HR atau respons upstream lebih rinci untuk menentukan perbaikan transaksi.
+
 ## Impor dan pembaruan
 
 Generator menolak ekspor terpotong, jumlah tidak sesuai dan SKU duplikat.

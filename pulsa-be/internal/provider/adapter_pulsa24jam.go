@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -68,6 +69,27 @@ type pulsa24JamPayRequest struct {
 	PIN      string `json:"pin"`
 }
 
+// P24 uses numeric transaction states and textual deposit states.
+type pulsa24JamStatus string
+
+func (s *pulsa24JamStatus) UnmarshalJSON(raw []byte) error {
+	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		*s = ""
+		return nil
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		*s = pulsa24JamStatus(text)
+		return nil
+	}
+	var number int64
+	if err := json.Unmarshal(raw, &number); err != nil {
+		return fmt.Errorf("status Pulsa24Jam harus berupa teks atau bilangan bulat: %w", err)
+	}
+	*s = pulsa24JamStatus(strconv.FormatInt(number, 10))
+	return nil
+}
+
 type pulsa24JamPayResponse struct {
 	OK            bool                `json:"ok"`
 	Success       bool                `json:"success"`
@@ -75,7 +97,7 @@ type pulsa24JamPayResponse struct {
 	Code          string              `json:"code"`
 	Message       string              `json:"message"`
 	Msg           string              `json:"msg"`
-	Status        string              `json:"status"`
+	Status        pulsa24JamStatus    `json:"status"`
 	Command       string              `json:"command"`
 	RefID         string              `json:"refid"`
 	LegacyRefID   string              `json:"ref_id"`
@@ -350,7 +372,7 @@ func (a *Pulsa24JamAdapter) Pay(ctx context.Context, req PayRequest) (*PayRespon
 	rc := firstNonEmpty(out.RC, out.Code)
 	refID := firstNonEmpty(out.RefID, out.LegacyRefID, payload.RefID)
 	providerRef := firstNonEmpty(out.ProviderRef, out.SN, refID)
-	message := firstNonEmpty(out.Message, out.Msg, out.Keterangan, out.Status, body)
+	message := firstNonEmpty(out.Message, out.Msg, out.Keterangan, string(out.Status), body)
 	price := out.Price
 	if price <= 0 {
 		price = out.Harga
@@ -372,7 +394,7 @@ func (a *Pulsa24JamAdapter) Pay(ctx context.Context, req PayRequest) (*PayRespon
 			"ok":           out.OK,
 			"success":      out.Success,
 			"command":      out.Command,
-			"status":       out.Status,
+			"status":       string(out.Status),
 			"refid":        refID,
 			"provider_ref": providerRef,
 			"sn":           out.SN,
@@ -440,7 +462,7 @@ func (a *Pulsa24JamAdapter) depositQRIS(ctx context.Context, command, refID stri
 		Amount:        out.Amount,
 		FeeAdmin:      out.FeeAdmin,
 		GrossAmount:   out.GrossAmount,
-		Status:        strings.ToLower(strings.TrimSpace(out.Status)),
+		Status:        strings.ToLower(strings.TrimSpace(string(out.Status))),
 		PaymentType:   strings.TrimSpace(out.PaymentType),
 		TransactionID: strings.TrimSpace(out.TransactionID),
 		QRURL:         strings.TrimSpace(out.QRURL),
