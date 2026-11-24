@@ -28,6 +28,23 @@ Hash SHA-256 berkas sumber disimpan dalam
 - Routing memakai SKU yang dipilih, tanpa mengganti SKU lama ke DANA/GOPAY
   secara diam-diam. Tidak ada pembelian berbayar otomatis untuk pengujian.
 
+## Pembatasan GoPay 24 November 2026
+
+Atas permintaan pemilik, hanya SKU `GOPAY` (E-WALLET 2.500 GOPAY OPEN AMOUNT)
+diaktifkan kembali. Sebanyak 1.130 SKU lain pada brand GOPAY kategori E-Wallet
+disembunyikan melalui pricing dan mapping provider. Penanda
+`PULSA24JAM_HIDDEN_BY_OWNER` dipertahankan oleh sinkronisasi; penanda karantina
+yang sudah ada tidak ditimpa. Brand lain, harga, saldo dan transaksi tidak diubah.
+API publik dan checkout diverifikasi tanpa pembayaran. Keberhasilan transaksi
+provider belum terverifikasi; karantina otomatis tetap berlaku jika gagal lagi.
+
+Perubahan satu kali tercatat pada `ops/gopay-only-manual.sql`, bukan migrasi
+deploy. Jangan jalankan ulang otomatis karena dapat membuka karantina GOPAY.
+Backup sebelum perubahan berada di server pada
+`/root/topuna-gopay-catalog-before-20261124T121429Z.dump`, berisi tabel pricing
+dan mapping. Pulihkan hanya baris yang relevan setelah review, bukan menimpa
+seluruh tabel yang mungkin sudah diperbarui sinkronisasi.
+
 ## Impor dan pembaruan
 
 Generator menolak ekspor terpotong, jumlah tidak sesuai dan SKU duplikat.
