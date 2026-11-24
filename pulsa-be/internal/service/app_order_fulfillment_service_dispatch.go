@@ -100,7 +100,10 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 	}
 	providerRefID := order.InvoiceID
 	if provider == providerpkg.Pulsa24JamProviderName {
-		providerRefID = pulsa24JamAppOrderRefID(order)
+		providerRefID, err = pulsa24JamAppOrderRefID(order, existing)
+		if err != nil {
+			return err
+		}
 	}
 
 	reqPayload := map[string]any{
@@ -130,7 +133,7 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 		return err
 	}
 
-	hs, body, price, sn, callErr := s.callAppOrderProvider(ctx, provider, providerProductCode, providerQty, order)
+	hs, body, price, sn, callErr := s.callAppOrderProvider(ctx, provider, providerProductCode, row.RefID, providerQty, order)
 
 	rawRespJSON, _ := json.Marshal(map[string]any{
 		"http_status": hs,
@@ -314,7 +317,7 @@ func (s *AppOrderFulfillmentService) DispatchPaidOrder(ctx context.Context, orde
 	return nil
 }
 
-func (s *AppOrderFulfillmentService) callAppOrderProvider(ctx context.Context, provider, providerProductCode string, providerQty int64, order *repository.AppOrderRow) (hs int, body string, price int64, sn string, callErr error) {
+func (s *AppOrderFulfillmentService) callAppOrderProvider(ctx context.Context, provider, providerProductCode, providerRefID string, providerQty int64, order *repository.AppOrderRow) (hs int, body string, price int64, sn string, callErr error) {
 	switch provider {
 	case "pulsa24jam":
 		client := s.providerClients["pulsa24jam"]
@@ -326,7 +329,7 @@ func (s *AppOrderFulfillmentService) callAppOrderProvider(ctx context.Context, p
 			Product: providerProductCode,
 			Dest:    order.Dest,
 			Qty:     providerQty,
-			RefID:   pulsa24JamAppOrderRefID(order),
+			RefID:   providerRefID,
 		})
 		callErr = nextErr
 		if resp != nil {

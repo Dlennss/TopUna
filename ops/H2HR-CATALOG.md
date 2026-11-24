@@ -60,12 +60,38 @@ refid, kredensial dummy, status angka/teks, dan redaksi PIN. `go test ./...`
 lulus. Ini perbaikan pembacaan respons, bukan bukti penyebab penolakan P24.
 Status 3 tetap gagal; harga, saldo, routing, dan karantina tidak diubah.
 
-Backend aktif memakai rilis manual
+Perbaikan parser saat itu dipasang melalui rilis manual
 `manual-p24-status-1795523625453834506`, berbasis commit
 `2630598b637f9f9f16650edfe6e7c5fa029fca23`. Rilis menyimpan perubahan source,
 checksum binary, metadata, dan drop-in sebelumnya untuk rollback. Frontend
 tidak diganti. Keberhasilan pembelian belum terverifikasi; perlu kontrak API
 H2HR atau respons upstream lebih rinci untuk menentukan perbaikan transaksi.
+
+## Benturan Ref ID setelah migrasi database
+
+Audit lanjutan 24 November 2026 menemukan bukti pada respons tersimpan:
+PKAC, PKAD, dan PKAE mendapat `existing: true` serta transaksi lama dengan SKU
+atau nominal berbeda. Pesanan GOPAY 50.000, invoice
+`INV-20261124124438-8C298062`, memakai PKAE dan mendapat kembali transaksi
+GPCAD1000 100.000 tanggal 7 Oktober. Ref ID lama memakai `PKA` + ID database
+base36, sehingga nomor urut yang berulang di database baru bertabrakan dengan
+referensi akun P24 sebelum migrasi. Ini bukti benturan untuk ketiga referensi
+tersebut, bukan bukti penyebab setiap kegagalan P24 yang hanya berpesan umum.
+
+Rilis `manual-p24-refid-1795524746497895654`, berbasis commit
+`fdf78e9c908c954dd1b88faa706fac6774a33bbd`, mengganti referensi pesanan baru
+dengan `TPA` + 17 karakter base32 SHA-256 invoice lengkap (85 bit). Ref ID
+dibatasi 20 karakter alfanumerik. Percobaan yang sudah tersimpan mempertahankan
+refid aslinya; request memakai refid dari baris provider yang disimpan, bukan
+menghitung ulang. Identitas kosong/tidak cocok ditolak sebelum dispatch.
+Tidak ada replay otomatis invoice refunded atau perubahan histori/saldo/harga.
+
+Regresi nomor urut berulang direproduksi sebelum perbaikan dan lulus setelahnya.
+Tes juga mencakup kestabilan invoice yang sama, perbedaan tahun, batas panjang,
+referensi lama, dan request ke provider. `go test ./...`, build Linux amd64,
+serta health check server lulus. Backend saja diperbarui, dengan backup drop-in
+dan sumber perubahan di direktori rilis. Belum ada uji pembayaran nyata oleh
+asisten. Jangan mengklaim semua transaksi provider pasti berhasil.
 
 ## Impor dan pembaruan
 

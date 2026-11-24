@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base32"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -197,34 +199,25 @@ func pulsa24JamGopayNominalSKURequiresAmountQty(sku, name string) bool {
 		strings.HasPrefix(sku, "GD")
 }
 
-func pulsa24JamAppOrderRefID(order *repository.AppOrderRow) string {
-	if order != nil && order.ID > 0 {
-		return "PKA" + strings.ToUpper(strconv.FormatInt(order.ID, 36))
+func pulsa24JamAppOrderRefID(order *repository.AppOrderRow, previous *repository.AppOrderProviderTrxRow) (string, error) {
+	if order == nil {
+		return "", fmt.Errorf("order diperlukan untuk refid Pulsa24Jam")
 	}
-
-	invoice := ""
-	if order != nil {
-		invoice = order.InvoiceID
-	}
-	invoice = strings.Map(func(r rune) rune {
-		switch {
-		case r >= '0' && r <= '9':
-			return r
-		case r >= 'A' && r <= 'Z':
-			return r
-		case r >= 'a' && r <= 'z':
-			return r - ('a' - 'A')
-		default:
-			return -1
+	// An existing attempt must keep its idempotency key, including legacy PKA IDs.
+	if previous != nil {
+		if previous.AppOrderID != order.ID || !strings.EqualFold(strings.TrimSpace(previous.Provider), providerpkg.Pulsa24JamProviderName) || strings.TrimSpace(previous.RefID) == "" {
+			return "", fmt.Errorf("referensi provider tersimpan tidak cocok dengan order")
 		}
-	}, invoice)
+		return strings.TrimSpace(previous.RefID), nil
+	}
+	invoice := strings.TrimSpace(order.InvoiceID)
 	if invoice == "" {
-		return "PKA"
+		return "", fmt.Errorf("invoice diperlukan untuk refid Pulsa24Jam")
 	}
-	if len(invoice) > 17 {
-		invoice = invoice[len(invoice)-17:]
-	}
-	return "PKA" + invoice
+	// Database sequences restart after migration. Use the complete invoice and
+	// a Topuna namespace, with 85 hash bits inside the 20-character refid limit.
+	sum := sha256.Sum256([]byte(invoice))
+	return "TPA" + base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(sum[:])[:17], nil
 }
 
 func appOrderProviderLooksLikeAccepted(provider, body string) bool {

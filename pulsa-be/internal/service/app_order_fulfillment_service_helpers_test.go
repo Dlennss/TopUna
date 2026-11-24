@@ -1,6 +1,7 @@
 package service
 
 import (
+	"regexp"
 	"testing"
 
 	"pulsa2/internal/repository"
@@ -119,25 +120,73 @@ func TestResolvePulsa24JamAppRequest(t *testing.T) {
 }
 
 func TestPulsa24JamAppOrderRefIDFitsH2HRLimit(t *testing.T) {
-	got := pulsa24JamAppOrderRefID(&repository.AppOrderRow{
+	got, err := pulsa24JamAppOrderRefID(&repository.AppOrderRow{
 		ID:        81,
 		InvoiceID: "INV-20260921170504-F95D2B50",
-	})
-	if got != "PKA29" {
-		t.Fatalf("refid = %q, want %q", got, "PKA29")
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if len(got) > 20 {
-		t.Fatalf("refid length = %d, want <= 20", len(got))
+	if !regexp.MustCompile(`^TPA[A-Z2-7]{17}$`).MatchString(got) {
+		t.Fatalf("expected 20-character namespaced alphanumeric refid, got %q", got)
 	}
 }
 
-func TestPulsa24JamAppOrderRefIDFallbackFitsH2HRLimit(t *testing.T) {
-	got := pulsa24JamAppOrderRefID(&repository.AppOrderRow{InvoiceID: "INV-20260921170504-F95D2B50"})
-	if len(got) > 20 {
-		t.Fatalf("refid length = %d, want <= 20: %s", len(got), got)
+func TestPulsa24JamAppOrderRefIDDoesNotRepeatAfterDatabaseReset(t *testing.T) {
+	old := &repository.AppOrderRow{ID: 14, InvoiceID: "INV-20261007051342-11111111"}
+	current := &repository.AppOrderRow{ID: 14, InvoiceID: "INV-20261124124438-8C298062"}
+	oldRef, oldErr := pulsa24JamAppOrderRefID(old, nil)
+	currentRef, currentErr := pulsa24JamAppOrderRefID(current, nil)
+	if oldErr != nil || currentErr != nil {
+		t.Fatalf("old=%v current=%v", oldErr, currentErr)
 	}
-	if got[:3] != "PKA" {
-		t.Fatalf("refid = %q, want PKA prefix", got)
+	if oldRef == currentRef || currentRef == "PKAE" {
+		t.Fatal("different invoices reused a provider refid after database reset")
+	}
+}
+
+func TestPulsa24JamAppOrderRefIDStableForSameInvoice(t *testing.T) {
+	invoice := "INV-20261124124438-8C298062"
+	first, err := pulsa24JamAppOrderRefID(&repository.AppOrderRow{ID: 14, InvoiceID: invoice}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	retry, err := pulsa24JamAppOrderRefID(&repository.AppOrderRow{ID: 999, InvoiceID: invoice}, nil)
+	if err != nil || first != retry {
+		t.Fatalf("refid changed for the same invoice: %q / %q, err=%v", first, retry, err)
+	}
+	differentYear, err := pulsa24JamAppOrderRefID(&repository.AppOrderRow{ID: 14, InvoiceID: "INV-20271124124438-8C298062"}, nil)
+	if err != nil || first == differentYear {
+		t.Fatal("refid must include the full invoice, not a truncated suffix")
+	}
+}
+
+func TestPulsa24JamAppOrderRefIDPreservesExistingAttempt(t *testing.T) {
+	order := &repository.AppOrderRow{ID: 14, InvoiceID: "INV-20261124124438-8C298062"}
+	for _, ref := range []string{"PKAE", "PKA1081446377D6CC96B", "TPAABCDEFGHIJKLMNOPQ"} {
+		previous := &repository.AppOrderProviderTrxRow{AppOrderID: 14, Provider: "pulsa24jam", RefID: ref}
+		got, err := pulsa24JamAppOrderRefID(order, previous)
+		if err != nil || got != ref {
+			t.Fatalf("existing attempt must retain refid %q: got=%q err=%v", ref, got, err)
+		}
+	}
+}
+
+func TestPulsa24JamAppOrderRefIDRejectsMissingIdentity(t *testing.T) {
+	for _, order := range []*repository.AppOrderRow{nil, {ID: 14}, {InvoiceID: " "}} {
+		if _, err := pulsa24JamAppOrderRefID(order, nil); err == nil {
+			t.Fatal("missing invoice must not generate a shared refid")
+		}
+	}
+	order := &repository.AppOrderRow{ID: 14, InvoiceID: "INV-20261124124438-8C298062"}
+	for _, previous := range []*repository.AppOrderProviderTrxRow{
+		{AppOrderID: 15, Provider: "pulsa24jam", RefID: "PKAE"},
+		{AppOrderID: 14, Provider: "other", RefID: "PKAE"},
+		{AppOrderID: 14, Provider: "pulsa24jam", RefID: " "},
+	} {
+		if _, err := pulsa24JamAppOrderRefID(order, previous); err == nil {
+			t.Fatal("invalid stored identity must not generate a new payment refid")
+		}
 	}
 }
 
